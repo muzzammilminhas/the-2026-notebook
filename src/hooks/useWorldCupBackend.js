@@ -237,6 +237,9 @@ export function useWorldCupBackend() {
         .from('profiles')
         .update({ nickname: cleaned })
         .eq('id', state.user.id)
+      if (error?.code === '23505') {
+        throw new Error('That leaderboard name is already taken.')
+      }
       if (error) throw error
       setState((current) => ({
         ...current,
