@@ -185,33 +185,48 @@ function resolveThirdSlot(slot, tournament, thirdRoute) {
 }
 
 export function buildKnockout(tournament, picks = {}) {
-  const qualifyingThirdGroups = tournament.thirdPlace
-    .filter((row) => row.qualifies)
-    .map((row) => row.groupId)
-    .sort()
-    .join('')
-  const thirdRoute = THIRD_PLACE_ROUTES[qualifyingThirdGroups]
+  const qualifyingThirdGroups = tournament.isGroupStageComplete
+    ? tournament.thirdPlace
+        .filter((row) => row.qualifies)
+        .map((row) => row.groupId)
+        .sort()
+        .join('')
+    : ''
+  const thirdRoute = tournament.isGroupStageComplete
+    ? THIRD_PLACE_ROUTES[qualifyingThirdGroups]
+    : null
   const resolvedPicks = {}
   const matches = {}
 
   KNOCKOUT_ROUNDS.forEach((round) => {
     round.matches.forEach((match) => {
-      const participants = match.slots
-        ? match.slots.map((slot) =>
-            typeof slot === 'string'
-              ? resolveSeed(slot, tournament)
-              : resolveThirdSlot(slot, tournament, thirdRoute),
-          )
-        : match.from.map((sourceId) => resolvedPicks[sourceId] ?? null)
+      const participants = !tournament.isGroupStageComplete
+        ? [null, null]
+        : match.slots
+          ? match.slots.map((slot) =>
+              typeof slot === 'string'
+                ? resolveSeed(slot, tournament)
+                : resolveThirdSlot(slot, tournament, thirdRoute),
+            )
+          : match.from.map((sourceId) => resolvedPicks[sourceId] ?? null)
+      const participantsReady =
+        participants.length === 2 &&
+        participants.every(Boolean) &&
+        participants[0] !== participants[1]
 
       const requestedPick = picks[match.id]
-      if (requestedPick && participants.includes(requestedPick)) {
+      if (
+        participantsReady &&
+        requestedPick &&
+        participants.includes(requestedPick)
+      ) {
         resolvedPicks[match.id] = requestedPick
       }
 
       matches[match.id] = {
         ...match,
         participants,
+        participantsReady,
         winnerId: resolvedPicks[match.id] ?? null,
       }
     })
@@ -226,6 +241,25 @@ export function buildKnockout(tournament, picks = {}) {
     championId: resolvedPicks[104] ?? null,
     thirdRoute,
   }
+}
+
+export function getDependentMatchIds(matchId) {
+  const dependents = []
+  const queue = [Number(matchId)]
+
+  while (queue.length) {
+    const sourceId = queue.shift()
+    KNOCKOUT_ROUNDS.forEach((round) => {
+      round.matches.forEach((match) => {
+        if (match.from?.includes(sourceId) && !dependents.includes(match.id)) {
+          dependents.push(match.id)
+          queue.push(match.id)
+        }
+      })
+    })
+  }
+
+  return dependents
 }
 
 export function compareGroup(actualRows, scenarioRows) {

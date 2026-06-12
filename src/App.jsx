@@ -13,6 +13,7 @@ import {
 import {
   buildKnockout,
   calculateTournament,
+  getDependentMatchIds,
   summarizeImpacts,
 } from './lib/tournamentEngine'
 
@@ -21,7 +22,6 @@ function App() {
   const [mode, setMode] = useState('whatif')
   const [view, setView] = useState('groups')
   const [selectedGroup, setSelectedGroup] = useState('A')
-  const [scenarioPicks, setScenarioPicks] = useState({})
   const [notice, setNotice] = useState('')
   const [authOpen, setAuthOpen] = useState(false)
 
@@ -42,15 +42,9 @@ function App() {
         ? backend.actualPicks
         : {
             ...backend.knockoutPicks,
-            ...scenarioPicks,
             ...backend.actualPicks,
           },
-    [
-      backend.actualPicks,
-      backend.knockoutPicks,
-      mode,
-      scenarioPicks,
-    ],
+    [backend.actualPicks, backend.knockoutPicks, mode],
   )
 
   const actualTournament = useMemo(
@@ -110,22 +104,69 @@ function App() {
       setAuthOpen(true)
       return
     }
+    if (!tournament.isGroupStageComplete) {
+      showNotice(
+        `Complete all group predictions first (${tournament.completeMatches}/72).`,
+      )
+      return
+    }
+    const bracketMatch = knockout.rounds
+      .flatMap((round) => round.matches)
+      .find((match) => match.id === matchId)
+    if (!bracketMatch?.participantsReady) {
+      showNotice('Choose both previous match winners before this round.')
+      return
+    }
+    if (!bracketMatch.participants.includes(teamId)) {
+      showNotice('That team is not in this matchup.')
+      return
+    }
     const match = backend.matchByNumber[matchId]
     const locked =
-      match &&
-      (match.status !== 'scheduled' ||
-        (match.kickoff_at && new Date(match.kickoff_at) <= new Date()))
+      !match ||
+      match.status !== 'scheduled' ||
+      (match.kickoff_at && new Date(match.kickoff_at) <= new Date())
     if (locked) {
       showNotice('Prediction locked: this match has started.')
       return
     }
 
-    setScenarioPicks((current) => ({ ...current, [matchId]: teamId }))
+    const dependentMatchIds = getDependentMatchIds(matchId)
+    const isUndo = backend.knockoutPicks[matchId] === teamId
     try {
+      if (isUndo) {
+        await backend.clearKnockoutPredictions([
+          matchId,
+          ...dependentMatchIds,
+        ])
+        showNotice('Pick removed and later rounds cleared')
+        return
+      }
+      await backend.clearKnockoutPredictions(dependentMatchIds)
       await backend.saveKnockoutPrediction(matchId, teamId)
-      showNotice('Knockout pick saved')
+      showNotice(
+        dependentMatchIds.some((id) => backend.knockoutPicks[id])
+          ? 'Pick changed and later rounds cleared'
+          : 'Knockout pick saved',
+      )
     } catch (error) {
       showNotice(error.message || 'Knockout pick could not be saved.')
+    }
+  }
+
+  async function resetKnockoutPicks() {
+    const resettableIds = Object.entries(backend.knockoutPredictions)
+      .filter(([, prediction]) => !prediction.scoredAt)
+      .map(([matchId]) => Number(matchId))
+    if (!resettableIds.length) {
+      showNotice('There are no unlocked knockout picks to reset.')
+      return
+    }
+    try {
+      await backend.clearKnockoutPredictions(resettableIds)
+      showNotice('All unlocked knockout picks reset')
+    } catch (error) {
+      showNotice(error.message || 'Knockout picks could not be reset.')
     }
   }
 
@@ -147,10 +188,10 @@ function App() {
         backendStatus={backend.error ? 'error' : 'online'}
         mode={mode}
         onModeChange={setMode}
-        onNicknameChange={async (nickname) => {
+        onProfileChange={async (profile) => {
           try {
-            await backend.updateNickname(nickname)
-            showNotice('Nickname updated')
+            await backend.updateProfile(profile)
+            showNotice('Profile updated')
           } catch (error) {
             showNotice(error.message)
           }
@@ -211,6 +252,7 @@ function App() {
               knockout={knockout}
               matchByNumber={backend.matchByNumber}
               onPickWinner={pickWinner}
+              onReset={resetKnockoutPicks}
               predictions={backend.knockoutPredictions}
               tournament={tournament}
             />

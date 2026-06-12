@@ -63,7 +63,12 @@ export function Leaderboard({ rows, currentUserId, loading }) {
             <span className="leader-rank">{index + 1}</span>
             <span className="leader-person">
               <Avatar name={row.nickname} seed={row.avatar_seed} />
-              <strong>{row.nickname}</strong>
+              <span className="leader-identity">
+                <strong>{row.nickname}</strong>
+                {row.favorite_team_name ? (
+                  <small>Favourite: {row.favorite_team_name}</small>
+                ) : null}
+              </span>
               {row.user_id === currentUserId ? <small>You</small> : null}
             </span>
             <span>{row.exact_scores}</span>

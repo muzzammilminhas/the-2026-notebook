@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { GROUP_IDS, TEAMS } from '../data/tournament'
 
 export function AuthDialog({ onClose, onSignIn, onSignUp }) {
   const [mode, setMode] = useState('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [nickname, setNickname] = useState('')
+  const [favoriteTeamId, setFavoriteTeamId] = useState('')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -17,7 +19,12 @@ export function AuthDialog({ onClose, onSignIn, onSignUp }) {
 
     try {
       if (mode === 'signup') {
-        const result = await onSignUp({ email, password, nickname })
+        const result = await onSignUp({
+          email,
+          password,
+          nickname,
+          favoriteTeamId,
+        })
         if (!result.session) {
           setMessage('Account created. Check your email to confirm it, then sign in.')
           return
@@ -85,18 +92,40 @@ export function AuthDialog({ onClose, onSignIn, onSignUp }) {
 
         <form className="auth-form" onSubmit={submit}>
           {mode === 'signup' ? (
-            <label>
-              Leaderboard name
-              <input
-                autoComplete="nickname"
-                maxLength="24"
-                minLength="3"
-                onChange={(event) => setNickname(event.target.value)}
-                placeholder="Muzammil"
-                required
-                value={nickname}
-              />
-            </label>
+            <>
+              <label>
+                Leaderboard name
+                <input
+                  autoComplete="nickname"
+                  maxLength="24"
+                  minLength="3"
+                  onChange={(event) => setNickname(event.target.value)}
+                  placeholder="Muzammil"
+                  required
+                  value={nickname}
+                />
+              </label>
+              <label>
+                Favourite team (optional)
+                <select
+                  onChange={(event) => setFavoriteTeamId(event.target.value)}
+                  value={favoriteTeamId}
+                >
+                  <option value="">Choose later</option>
+                  {GROUP_IDS.map((groupId) => (
+                    <optgroup key={groupId} label={`Group ${groupId}`}>
+                      {Object.values(TEAMS)
+                        .filter((team) => team.groupId === groupId)
+                        .map((team) => (
+                          <option key={team.id} value={team.id}>
+                            {team.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+            </>
           ) : null}
 
           <label>

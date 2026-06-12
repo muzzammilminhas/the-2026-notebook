@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { GROUP_IDS } from '../data/tournament'
+import { GROUP_IDS, TEAMS } from '../data/tournament'
 import { isScoreComplete } from '../lib/tournamentEngine'
 import { supabase } from '../lib/supabase'
 
@@ -226,16 +226,45 @@ export function useWorldCupBackend() {
     [refresh, state.user],
   )
 
-  const updateNickname = useCallback(
-    async (nickname) => {
+  const clearKnockoutPredictions = useCallback(
+    async (matchNumbers) => {
+      if (!state.user) throw new Error('Sign in to change knockout picks.')
+      const ids = [...new Set(matchNumbers.map(Number).filter(Number.isInteger))]
+      if (!ids.length) return
+
+      setState((current) => {
+        const knockoutPredictions = { ...current.knockoutPredictions }
+        ids.forEach((matchNumber) => delete knockoutPredictions[matchNumber])
+        return { ...current, knockoutPredictions }
+      })
+
+      const { error } = await supabase
+        .from('knockout_predictions')
+        .delete()
+        .eq('user_id', state.user.id)
+        .in('match_number', ids)
+      if (error) {
+        await refresh()
+        throw error
+      }
+    },
+    [refresh, state.user],
+  )
+
+  const updateProfile = useCallback(
+    async ({ nickname, favoriteTeamId }) => {
       if (!state.user) return
       const cleaned = nickname.trim()
       if (cleaned.length < 3 || cleaned.length > 24) {
         throw new Error('Nickname must be 3 to 24 characters.')
       }
+      const favorite = favoriteTeamId || null
+      if (favorite && !TEAMS[favorite]) {
+        throw new Error('Choose a valid favourite team.')
+      }
       const { error } = await supabase
         .from('profiles')
-        .update({ nickname: cleaned })
+        .update({ nickname: cleaned, favorite_team_id: favorite })
         .eq('id', state.user.id)
       if (error?.code === '23505') {
         throw new Error('That leaderboard name is already taken.')
@@ -243,7 +272,11 @@ export function useWorldCupBackend() {
       if (error) throw error
       setState((current) => ({
         ...current,
-        profile: { ...current.profile, nickname: cleaned },
+        profile: {
+          ...current.profile,
+          nickname: cleaned,
+          favorite_team_id: favorite,
+        },
       }))
       await refresh()
     },
@@ -251,16 +284,23 @@ export function useWorldCupBackend() {
   )
 
   const signUp = useCallback(
-    async ({ email, password, nickname }) => {
+    async ({ email, password, nickname, favoriteTeamId }) => {
       const cleaned = nickname.trim()
       if (cleaned.length < 3 || cleaned.length > 24) {
         throw new Error('Leaderboard name must be 3 to 24 characters.')
+      }
+      const favorite = favoriteTeamId || null
+      if (favorite && !TEAMS[favorite]) {
+        throw new Error('Choose a valid favourite team.')
       }
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          data: { nickname: cleaned },
+          data: {
+            nickname: cleaned,
+            favorite_team_id: favorite,
+          },
           emailRedirectTo: window.location.origin + window.location.pathname,
         },
       })
@@ -350,7 +390,8 @@ export function useWorldCupBackend() {
     refresh,
     savePrediction,
     saveKnockoutPrediction,
-    updateNickname,
+    clearKnockoutPredictions,
+    updateProfile,
     signUp,
     signIn,
     signOut,

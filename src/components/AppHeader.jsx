@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { GROUP_IDS, TEAMS } from '../data/tournament'
 
 export function AppHeader({
   mode,
   onModeChange,
   profile,
-  onNicknameChange,
+  onProfileChange,
   onSignIn,
   onSignOut,
   scoreSummary,
@@ -13,10 +14,16 @@ export function AppHeader({
 }) {
   const [editing, setEditing] = useState(false)
   const [nickname, setNickname] = useState(profile?.nickname ?? '')
+  const [favoriteTeamId, setFavoriteTeamId] = useState(
+    profile?.favorite_team_id ?? '',
+  )
+  const favoriteTeam = profile?.favorite_team_id
+    ? TEAMS[profile.favorite_team_id]
+    : null
 
-  async function submitNickname(event) {
+  async function submitProfile(event) {
     event.preventDefault()
-    await onNicknameChange(nickname)
+    await onProfileChange({ nickname, favoriteTeamId })
     setEditing(false)
   }
 
@@ -66,7 +73,7 @@ export function AppHeader({
             </span>
           </button>
         ) : editing ? (
-          <form className="nickname-form" onSubmit={submitNickname}>
+          <form className="nickname-form" onSubmit={submitProfile}>
             <input
               aria-label="Leaderboard nickname"
               autoFocus
@@ -75,7 +82,32 @@ export function AppHeader({
               onChange={(event) => setNickname(event.target.value)}
               value={nickname}
             />
+            <select
+              aria-label="Favourite team"
+              onChange={(event) => setFavoriteTeamId(event.target.value)}
+              value={favoriteTeamId}
+            >
+              <option value="">No favourite</option>
+              {GROUP_IDS.map((groupId) => (
+                <optgroup key={groupId} label={`Group ${groupId}`}>
+                  {Object.values(TEAMS)
+                    .filter((team) => team.groupId === groupId)
+                    .map((team) => (
+                      <option key={team.id} value={team.id}>
+                        {team.name}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
+            </select>
             <button type="submit">Save</button>
+            <button
+              className="cancel-profile-button"
+              onClick={() => setEditing(false)}
+              type="button"
+            >
+              Cancel
+            </button>
             <button
               className="sign-out-button"
               onClick={async () => {
@@ -92,6 +124,7 @@ export function AppHeader({
             className="profile-button"
             onClick={() => {
               setNickname(profile?.nickname ?? '')
+              setFavoriteTeamId(profile?.favorite_team_id ?? '')
               setEditing(true)
             }}
             type="button"
@@ -100,6 +133,11 @@ export function AppHeader({
             <span>
               <small>Playing as</small>
               <strong>{profile?.nickname ?? 'Connecting...'}</strong>
+              <em>
+                {favoriteTeam
+                  ? `Favourite: ${favoriteTeam.name}`
+                  : 'Choose your favourite team'}
+              </em>
             </span>
           </button>
         )}

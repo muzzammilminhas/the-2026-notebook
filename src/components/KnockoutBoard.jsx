@@ -36,12 +36,15 @@ export function KnockoutBoard({
   isWhatIf,
   matchByNumber,
   predictions,
+  onReset,
 }) {
   const champion = knockout.championId ? TEAMS[knockout.championId] : null
-  const qualifiedThirds = tournament.thirdPlace
-    .filter((row) => row.qualifies)
-    .map((row) => row.groupId)
-    .join(', ')
+  const qualifiedThirds = tournament.isGroupStageComplete
+    ? tournament.thirdPlace
+        .filter((row) => row.qualifies)
+        .map((row) => row.groupId)
+        .join(', ')
+    : ''
 
   return (
     <div className="knockout-view">
@@ -50,29 +53,60 @@ export function KnockoutBoard({
           <span className="hand-note">
             {isWhatIf ? 'The simulation page' : 'Official bracket'}
           </span>
-          <h2>{isWhatIf ? 'Knockout predictions' : 'Knockout results'}</h2>
+          <h2>
+            {isWhatIf && !tournament.isGroupStageComplete
+              ? 'Knockout bracket preview'
+              : isWhatIf
+                ? 'Knockout predictions'
+                : 'Knockout results'}
+          </h2>
           <p>
             {isWhatIf
-              ? 'Pick who advances. Every correct knockout winner is worth 2 points.'
+              ? tournament.isGroupStageComplete
+                ? 'Pick who advances. Click your selected winner again to undo it.'
+                : `Complete the group notebook first. ${tournament.completeMatches}/72 results are filled.`
               : 'This bracket is read-only and advances from verified FIFA results.'}
           </p>
         </div>
         <div className={`champion-box ${champion ? 'decided' : ''}`}>
           <span>{isWhatIf ? 'My champion' : 'World champion'}</span>
-          <strong>{champion?.name ?? 'Still unwritten'}</strong>
+          <strong>
+            {champion?.name ??
+              (tournament.isGroupStageComplete
+                ? 'Still unwritten'
+                : 'After the groups')}
+          </strong>
         </div>
       </section>
+
+      {!tournament.isGroupStageComplete ? (
+        <div className="bracket-gate" role="status">
+          <strong>Group stage in progress</strong>
+          <span>
+            The Round of 32 is not active yet. Fill every remaining group score
+            in What If to unlock a complete, consistent simulation.
+          </span>
+        </div>
+      ) : null}
 
       <div className="route-note">
         <strong>Official third-place routing:</strong>
         <span>{qualifiedThirds || 'Awaiting group standings'}</span>
         <small>
-          Annex C pairing{' '}
-          {tournament.isGroupStageComplete
-            ? 'locked'
-            : 'is provisional while groups are unfinished'}
-          .
+          Annex C pairing is calculated only from a complete group table.
         </small>
+        {isWhatIf ? (
+          <button
+            className="reset-bracket-button"
+            disabled={!Object.values(predictions).some(
+              (prediction) => !prediction.scoredAt,
+            )}
+            onClick={onReset}
+            type="button"
+          >
+            Reset picks
+          </button>
+        ) : null}
       </div>
 
       <div className="bracket-scroll">
@@ -95,6 +129,11 @@ export function KnockoutBoard({
                     (officialMatch.kickoff_at &&
                       new Date(officialMatch.kickoff_at) <= new Date())
                   const prediction = predictions[match.id]
+                  const selectionDisabled =
+                    !isWhatIf ||
+                    locked ||
+                    !tournament.isGroupStageComplete ||
+                    !match.participantsReady
                   const status =
                     officialMatch?.status === 'live'
                       ? 'Live'
@@ -113,13 +152,13 @@ export function KnockoutBoard({
                         M{match.id} · {status}
                       </span>
                       <TeamSlot
-                        disabled={!isWhatIf || locked}
+                        disabled={selectionDisabled}
                         onPick={(teamId) => onPickWinner(match.id, teamId)}
                         teamId={match.participants[0]}
                         winnerId={match.winnerId}
                       />
                       <TeamSlot
-                        disabled={!isWhatIf || locked}
+                        disabled={selectionDisabled}
                         onPick={(teamId) => onPickWinner(match.id, teamId)}
                         teamId={match.participants[1]}
                         winnerId={match.winnerId}
@@ -144,7 +183,7 @@ export function KnockoutBoard({
 
       <p className="bracket-footnote">
         {isWhatIf
-          ? 'Predictions lock at the official kickoff time. Actual winners replace the simulation as matches finish.'
+          ? 'Both opponents are required before a pick can advance. Predictions lock at kickoff, and verified winners replace your simulation.'
           : 'Scores and winners are supplied by FIFA and cannot be edited here.'}
       </p>
     </div>
