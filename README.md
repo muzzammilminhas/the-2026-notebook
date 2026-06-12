@@ -20,7 +20,7 @@ https://muzzammilminhas.github.io/the-2026-notebook/
 - Knockout scoring: correct advancing team `2`.
 - All 12 groups, best third-place ranking, official Annex C routing, and the
   full Round of 32-to-final bracket are included.
-- Anonymous Supabase accounts preserve predictions without collecting email
+- Email/password accounts preserve predictions across browsers and devices
   addresses or requiring Google sign-in.
 - A public leaderboard ranks players by total points.
 
@@ -41,7 +41,7 @@ No paid API, advertising, payment flow, or user tracking is used.
 ## Stack
 
 - React 19 and Vite
-- Supabase Postgres, anonymous Auth, Row Level Security, Vault, Cron, and Edge
+- Supabase Postgres, password Auth, Row Level Security, Vault, Cron, and Edge
   Functions
 - Vitest and ESLint
 - GitHub Actions and GitHub Pages

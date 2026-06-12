@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import './App.css'
 import { AppHeader } from './components/AppHeader'
+import { AuthDialog } from './components/AuthDialog'
 import { GroupLab } from './components/GroupLab'
 import { GroupNav } from './components/GroupNav'
 import { KnockoutBoard } from './components/KnockoutBoard'
@@ -22,6 +23,7 @@ function App() {
   const [selectedGroup, setSelectedGroup] = useState('A')
   const [scenarioPicks, setScenarioPicks] = useState({})
   const [notice, setNotice] = useState('')
+  const [authOpen, setAuthOpen] = useState(false)
 
   const predictionScores = useMemo(
     () =>
@@ -77,6 +79,10 @@ function App() {
   }
 
   async function updatePrediction(fixtureId, side, value) {
+    if (!backend.user) {
+      setAuthOpen(true)
+      return
+    }
     const match = backend.matchMeta[fixtureId]
     const started =
       match &&
@@ -100,6 +106,10 @@ function App() {
 
   async function pickWinner(matchId, teamId) {
     if (mode === 'actual') return
+    if (!backend.user) {
+      setAuthOpen(true)
+      return
+    }
     const match = backend.matchByNumber[matchId]
     const locked =
       match &&
@@ -145,8 +155,18 @@ function App() {
             showNotice(error.message)
           }
         }}
+        onSignIn={() => setAuthOpen(true)}
+        onSignOut={async () => {
+          try {
+            await backend.signOut()
+            showNotice('Signed out')
+          } catch (error) {
+            showNotice(error.message || 'Could not sign out.')
+          }
+        }}
         profile={backend.profile}
         scoreSummary={backend.scoreSummary}
+        user={backend.user}
       />
 
       <div className="workspace">
@@ -210,6 +230,13 @@ function App() {
         <div className="connection-banner">Opening your notebook...</div>
       ) : null}
       {notice ? <div className="toast">{notice}</div> : null}
+      {authOpen ? (
+        <AuthDialog
+          onClose={() => setAuthOpen(false)}
+          onSignIn={backend.signIn}
+          onSignUp={backend.signUp}
+        />
+      ) : null}
     </div>
   )
 }

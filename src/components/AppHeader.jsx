@@ -5,8 +5,11 @@ export function AppHeader({
   onModeChange,
   profile,
   onNicknameChange,
+  onSignIn,
+  onSignOut,
   scoreSummary,
   backendStatus,
+  user,
 }) {
   const [editing, setEditing] = useState(false)
   const [nickname, setNickname] = useState(profile?.nickname ?? '')
@@ -54,7 +57,15 @@ export function AppHeader({
           </small>
         </div>
 
-        {editing ? (
+        {!user ? (
+          <button className="profile-button sign-in-button" onClick={onSignIn} type="button">
+            <span className="status-dot" />
+            <span>
+              <small>Save your predictions</small>
+              <strong>Sign in or create account</strong>
+            </span>
+          </button>
+        ) : editing ? (
           <form className="nickname-form" onSubmit={submitNickname}>
             <input
               aria-label="Leaderboard nickname"
@@ -65,6 +76,16 @@ export function AppHeader({
               value={nickname}
             />
             <button type="submit">Save</button>
+            <button
+              className="sign-out-button"
+              onClick={async () => {
+                setEditing(false)
+                await onSignOut()
+              }}
+              type="button"
+            >
+              Sign out
+            </button>
           </form>
         ) : (
           <button

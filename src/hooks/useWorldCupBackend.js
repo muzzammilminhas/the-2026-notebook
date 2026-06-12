@@ -49,32 +49,17 @@ export function useWorldCupBackend() {
       const {
         data: { session: existingSession },
       } = await supabase.auth.getSession()
-
       let session = existingSession
-      if (!session) {
-        const { data, error } = await supabase.auth.signInAnonymously()
-        if (error) throw error
-        session = data.session
+      if (session?.user?.is_anonymous) {
+        await supabase.auth.signOut({ scope: 'local' })
+        session = null
       }
-
-      const user = session.user
-      const [
-        profileResult,
-        matchesResult,
-        predictionsResult,
-        knockoutResult,
-        leaderboardResult,
-      ] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
+      const user = session?.user ?? null
+      const [matchesResult, leaderboardResult] = await Promise.all([
         supabase
           .from('matches')
           .select('*')
           .order('match_number', { ascending: true }),
-        supabase.from('predictions').select('*').eq('user_id', user.id),
-        supabase
-          .from('knockout_predictions')
-          .select('*')
-          .eq('user_id', user.id),
         supabase
           .from('public_leaderboard')
           .select('*')
@@ -85,16 +70,33 @@ export function useWorldCupBackend() {
           .limit(100),
       ])
 
-      const firstError =
-        profileResult.error ??
-        matchesResult.error ??
-        predictionsResult.error ??
-        knockoutResult.error ??
-        leaderboardResult.error
+      const firstError = matchesResult.error ?? leaderboardResult.error
       if (firstError) throw firstError
 
+      let profile = null
+      let predictionRows = []
+      let knockoutRows = []
+
+      if (user) {
+        const [profileResult, predictionsResult, knockoutResult] =
+          await Promise.all([
+            supabase.from('profiles').select('*').eq('id', user.id).single(),
+            supabase.from('predictions').select('*').eq('user_id', user.id),
+            supabase
+              .from('knockout_predictions')
+              .select('*')
+              .eq('user_id', user.id),
+          ])
+        const userError =
+          profileResult.error ?? predictionsResult.error ?? knockoutResult.error
+        if (userError) throw userError
+        profile = profileResult.data
+        predictionRows = predictionsResult.data
+        knockoutRows = knockoutResult.data
+      }
+
       const predictions = Object.fromEntries(
-        predictionsResult.data.map((prediction) => [
+        predictionRows.map((prediction) => [
           prediction.match_id,
           {
             home: prediction.predicted_home,
@@ -106,7 +108,7 @@ export function useWorldCupBackend() {
         ]),
       )
       const knockoutPredictions = Object.fromEntries(
-        knockoutResult.data.map((prediction) => [
+        knockoutRows.map((prediction) => [
           prediction.match_number,
           {
             teamId: prediction.predicted_winner_team_id,
@@ -119,7 +121,7 @@ export function useWorldCupBackend() {
 
       setState({
         user,
-        profile: profileResult.data,
+        profile,
         matches: matchesResult.data,
         predictions,
         knockoutPredictions,
@@ -140,12 +142,20 @@ export function useWorldCupBackend() {
   useEffect(() => {
     refresh()
     const interval = window.setInterval(refresh, 60_000)
-    return () => window.clearInterval(interval)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      window.setTimeout(refresh, 0)
+    })
+    return () => {
+      window.clearInterval(interval)
+      subscription.unsubscribe()
+    }
   }, [refresh])
 
   const savePrediction = useCallback(
     async (matchId, score) => {
-      if (!state.user) return { persisted: false }
+      if (!state.user) throw new Error('Sign in to save predictions.')
 
       setState((current) => ({
         ...current,
@@ -185,7 +195,7 @@ export function useWorldCupBackend() {
 
   const saveKnockoutPrediction = useCallback(
     async (matchNumber, teamId) => {
-      if (!state.user) return
+      if (!state.user) throw new Error('Sign in to save knockout picks.')
 
       setState((current) => ({
         ...current,
@@ -236,6 +246,46 @@ export function useWorldCupBackend() {
     },
     [refresh, state.user],
   )
+
+  const signUp = useCallback(
+    async ({ email, password, nickname }) => {
+      const cleaned = nickname.trim()
+      if (cleaned.length < 3 || cleaned.length > 24) {
+        throw new Error('Leaderboard name must be 3 to 24 characters.')
+      }
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: { nickname: cleaned },
+          emailRedirectTo: window.location.origin + window.location.pathname,
+        },
+      })
+      if (error) throw error
+      if (data.session) await refresh()
+      return data
+    },
+    [refresh],
+  )
+
+  const signIn = useCallback(
+    async ({ email, password }) => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      })
+      if (error) throw error
+      await refresh()
+      return data
+    },
+    [refresh],
+  )
+
+  const signOut = useCallback(async () => {
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
+    await refresh()
+  }, [refresh])
 
   const derived = useMemo(() => matchesToState(state.matches), [state.matches])
   const knockoutPicks = useMemo(
@@ -298,6 +348,9 @@ export function useWorldCupBackend() {
     savePrediction,
     saveKnockoutPrediction,
     updateNickname,
+    signUp,
+    signIn,
+    signOut,
   }
 }
 
