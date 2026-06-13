@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#14233b"/>
+  <circle cx="256" cy="256" r="164" fill="#0c192c" stroke="#6da1ff" stroke-width="18"/>
+  <circle cx="256" cy="256" r="136" fill="none" stroke="#1857c4" stroke-opacity=".38" stroke-width="5"/>
+  <path d="M174 326c52 16 114 17 166-2" fill="none" stroke="#f6f1df" stroke-linecap="round" stroke-opacity=".45" stroke-width="9"/>
+  <text
+    x="256"
+    y="298"
+    fill="#ffffff"
+    font-family="Segoe Print, Bradley Hand, Comic Sans MS, cursive"
+    font-size="144"
+    font-style="italic"
+    font-weight="800"
+    text-anchor="middle"
+    transform="rotate(-5 256 256)"
+  >26</text>
+</svg>
