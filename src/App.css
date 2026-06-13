@@ -2311,8 +2311,9 @@ td:nth-child(2) small {
   }
 
   .paper-meta span:last-child {
-    margin-left: auto;
-    text-align: right;
+    flex: 1 1 100%;
+    margin-left: 0;
+    text-align: left;
   }
 
   .page-heading {
