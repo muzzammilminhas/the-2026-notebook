@@ -1,9 +1,17 @@
 import { useState } from 'react'
 import { GROUP_IDS, TEAMS } from '../data/tournament'
 
+const SECTIONS = [
+  { id: 'actual', label: 'Actual' },
+  { id: 'whatif', label: 'What If' },
+  { id: 'standings', label: 'Standings' },
+  { id: 'knockout', label: 'Knockout' },
+  { id: 'leaderboard', label: 'Leaderboard' },
+]
+
 export function AppHeader({
-  mode,
-  onModeChange,
+  section,
+  onSectionChange,
   profile,
   onProfileChange,
   onSignIn,
@@ -37,22 +45,19 @@ export function AppHeader({
         </div>
       </div>
 
-      <div className="mode-switch" aria-label="Notebook mode">
-        <button
-          className={mode === 'actual' ? 'active' : ''}
-          onClick={() => onModeChange('actual')}
-          type="button"
-        >
-          Actual
-        </button>
-        <button
-          className={mode === 'whatif' ? 'active' : ''}
-          onClick={() => onModeChange('whatif')}
-          type="button"
-        >
-          What if
-        </button>
-      </div>
+      <nav className="mode-switch primary-nav" aria-label="Notebook sections">
+        {SECTIONS.map((item) => (
+          <button
+            aria-current={section === item.id ? 'page' : undefined}
+            className={section === item.id ? 'active' : ''}
+            key={item.id}
+            onClick={() => onSectionChange(item.id)}
+            type="button"
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
 
       <div className="header-account">
         <div className="header-score">

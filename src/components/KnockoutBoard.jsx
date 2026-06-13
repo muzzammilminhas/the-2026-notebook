@@ -83,8 +83,9 @@ export function KnockoutBoard({
         <div className="bracket-gate" role="status">
           <strong>Group stage in progress</strong>
           <span>
-            The Round of 32 is not active yet. Fill every remaining group score
-            in What If to unlock a complete, consistent simulation.
+            {isWhatIf
+              ? 'The Round of 32 is not active yet. Fill every remaining group score in What If to unlock a complete, consistent simulation.'
+              : 'The official Round of 32 will appear automatically when the verified group stage is complete.'}
           </span>
         </div>
       ) : null}
@@ -163,7 +164,7 @@ export function KnockoutBoard({
                         teamId={match.participants[1]}
                         winnerId={match.winnerId}
                       />
-                      {prediction?.scoredAt ? (
+                      {isWhatIf && prediction?.scoredAt ? (
                         <span
                           className={`knockout-grade ${prediction.grade}`}
                         >

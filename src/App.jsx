@@ -2,14 +2,20 @@ import { useMemo, useState } from 'react'
 import './App.css'
 import { AppHeader } from './components/AppHeader'
 import { AuthDialog } from './components/AuthDialog'
-import { GroupLab } from './components/GroupLab'
-import { GroupNav } from './components/GroupNav'
+import { FixtureFeed } from './components/FixtureFeed'
+import { FixtureFilters } from './components/FixtureFilters'
 import { KnockoutBoard } from './components/KnockoutBoard'
 import { Leaderboard } from './components/Leaderboard'
+import { ScenarioStandingsPanel } from './components/ScenarioStandingsPanel'
+import { TournamentStandings } from './components/TournamentStandings'
 import {
   buildPredictionScores,
   useWorldCupBackend,
 } from './hooks/useWorldCupBackend'
+import {
+  buildFixtureSchedule,
+  filterFixtureSchedule,
+} from './lib/fixtureSchedule'
 import {
   buildKnockout,
   calculateTournament,
@@ -19,9 +25,14 @@ import {
 
 function App() {
   const backend = useWorldCupBackend()
-  const [mode, setMode] = useState('whatif')
-  const [view, setView] = useState('groups')
-  const [selectedGroup, setSelectedGroup] = useState('A')
+  const [section, setSection] = useState('actual')
+  const [knockoutMode, setKnockoutMode] = useState('official')
+  const [scenarioGroup, setScenarioGroup] = useState('A')
+  const [fixtureFilters, setFixtureFilters] = useState({
+    team: '',
+    group: '',
+    date: '',
+  })
   const [notice, setNotice] = useState('')
   const [authOpen, setAuthOpen] = useState(false)
 
@@ -34,37 +45,44 @@ function App() {
       ),
     [backend.actualScores, backend.matchMeta, backend.predictions],
   )
-  const effectiveScores =
-    mode === 'actual' ? backend.actualScores : predictionScores
-  const effectivePicks = useMemo(
-    () =>
-      mode === 'actual'
-        ? backend.actualPicks
-        : {
-            ...backend.knockoutPicks,
-            ...backend.actualPicks,
-          },
-    [backend.actualPicks, backend.knockoutPicks, mode],
+  const scenarioPicks = useMemo(
+    () => ({
+      ...backend.knockoutPicks,
+      ...backend.actualPicks,
+    }),
+    [backend.actualPicks, backend.knockoutPicks],
   )
-
   const actualTournament = useMemo(
     () => calculateTournament(backend.actualScores),
     [backend.actualScores],
   )
-  const tournament = useMemo(
-    () => calculateTournament(effectiveScores),
-    [effectiveScores],
+  const scenarioTournament = useMemo(
+    () => calculateTournament(predictionScores),
+    [predictionScores],
   )
-  const knockout = useMemo(
-    () => buildKnockout(tournament, effectivePicks),
-    [effectivePicks, tournament],
+  const officialKnockout = useMemo(
+    () => buildKnockout(actualTournament, backend.actualPicks),
+    [actualTournament, backend.actualPicks],
+  )
+  const scenarioKnockout = useMemo(
+    () => buildKnockout(scenarioTournament, scenarioPicks),
+    [scenarioPicks, scenarioTournament],
   )
   const impacts = useMemo(
-    () =>
-      mode === 'whatif'
-        ? summarizeImpacts(actualTournament, tournament)
-        : [],
-    [actualTournament, mode, tournament],
+    () => summarizeImpacts(actualTournament, scenarioTournament),
+    [actualTournament, scenarioTournament],
+  )
+  const fixtureSchedule = useMemo(
+    () => buildFixtureSchedule(backend.matchMeta),
+    [backend.matchMeta],
+  )
+  const filteredFixtures = useMemo(
+    () => filterFixtureSchedule(fixtureSchedule, fixtureFilters),
+    [fixtureFilters, fixtureSchedule],
+  )
+  const fixtureDates = useMemo(
+    () => [...new Set(fixtureSchedule.map((fixture) => fixture.dateKey))],
+    [fixtureSchedule],
   )
 
   function showNotice(message) {
@@ -99,18 +117,18 @@ function App() {
   }
 
   async function pickWinner(matchId, teamId) {
-    if (mode === 'actual') return
+    if (knockoutMode !== 'whatif') return
     if (!backend.user) {
       setAuthOpen(true)
       return
     }
-    if (!tournament.isGroupStageComplete) {
+    if (!scenarioTournament.isGroupStageComplete) {
       showNotice(
-        `Complete all group predictions first (${tournament.completeMatches}/72).`,
+        `Complete all group predictions first (${scenarioTournament.completeMatches}/72).`,
       )
       return
     }
-    const bracketMatch = knockout.rounds
+    const bracketMatch = scenarioKnockout.rounds
       .flatMap((round) => round.matches)
       .find((match) => match.id === matchId)
     if (!bracketMatch?.participantsReady) {
@@ -186,8 +204,6 @@ function App() {
     <div className="app-shell">
       <AppHeader
         backendStatus={backend.error ? 'error' : 'online'}
-        mode={mode}
-        onModeChange={setMode}
         onProfileChange={async (profile) => {
           try {
             await backend.updateProfile(profile)
@@ -196,6 +212,7 @@ function App() {
             showNotice(error.message)
           }
         }}
+        onSectionChange={setSection}
         onSignIn={() => setAuthOpen(true)}
         onSignOut={async () => {
           try {
@@ -207,21 +224,11 @@ function App() {
         }}
         profile={backend.profile}
         scoreSummary={backend.scoreSummary}
+        section={section}
         user={backend.user}
       />
 
       <div className="workspace">
-        <GroupNav
-          selectedGroup={selectedGroup}
-          onSelectGroup={(groupId) => {
-            setSelectedGroup(groupId)
-            setView('groups')
-          }}
-          view={view}
-          onViewChange={setView}
-          tournament={tournament}
-        />
-
         <main className="paper" aria-live="polite">
           <div className="paper-meta">
             <span>{completedCount}/72 official group results</span>
@@ -230,35 +237,112 @@ function App() {
             </span>
           </div>
 
-          {view === 'groups' ? (
-            <GroupLab
-              actualScores={backend.actualScores}
-              actualTournament={actualTournament}
-              groupId={selectedGroup}
-              impacts={impacts}
-              isWhatIf={mode === 'whatif'}
-              matchMeta={backend.matchMeta}
-              onScoreChange={updatePrediction}
-              predictions={backend.predictions}
-              savingMatches={backend.savingMatches}
-              scores={effectiveScores}
-              tournament={tournament}
-            />
+          {section === 'actual' || section === 'whatif' ? (
+            <div className={`fixture-page ${section}`}>
+              <section className="page-heading fixture-page-heading">
+                <div>
+                  <span className="hand-note">
+                    {section === 'actual'
+                      ? 'The official match notebook'
+                      : 'Your prediction notebook'}
+                  </span>
+                  <h2>
+                    {section === 'actual'
+                      ? 'Fixtures & results'
+                      : 'What If fixtures'}
+                  </h2>
+                  <p>
+                    {section === 'actual'
+                      ? 'A read-only chronological feed. Verified results arrive automatically.'
+                      : 'Predict future scores in chronological order. Real results replace predictions after kickoff.'}
+                  </p>
+                </div>
+              </section>
+
+              <FixtureFilters
+                dates={fixtureDates}
+                filters={fixtureFilters}
+                onChange={setFixtureFilters}
+                totalCount={fixtureSchedule.length}
+                visibleCount={filteredFixtures.length}
+              />
+
+              <div
+                className={`fixture-page-layout ${
+                  section === 'whatif' ? 'with-scenario' : ''
+                }`}
+              >
+                <FixtureFeed
+                  actualScores={backend.actualScores}
+                  fixtures={filteredFixtures}
+                  mode={section}
+                  onScoreChange={updatePrediction}
+                  predictions={backend.predictions}
+                  savingMatches={backend.savingMatches}
+                />
+
+                {section === 'whatif' ? (
+                  <ScenarioStandingsPanel
+                    actualTournament={actualTournament}
+                    impacts={impacts}
+                    onSelectGroup={setScenarioGroup}
+                    scores={predictionScores}
+                    selectedGroup={scenarioGroup}
+                    tournament={scenarioTournament}
+                  />
+                ) : null}
+              </div>
+            </div>
           ) : null}
 
-          {view === 'knockout' ? (
-            <KnockoutBoard
-              isWhatIf={mode === 'whatif'}
-              knockout={knockout}
-              matchByNumber={backend.matchByNumber}
-              onPickWinner={pickWinner}
-              onReset={resetKnockoutPicks}
-              predictions={backend.knockoutPredictions}
-              tournament={tournament}
-            />
+          {section === 'standings' ? (
+            <TournamentStandings tournament={actualTournament} />
           ) : null}
 
-          {view === 'leaderboard' ? (
+          {section === 'knockout' ? (
+            <div className="knockout-page">
+              <div className="knockout-mode-switch" aria-label="Knockout mode">
+                <button
+                  className={knockoutMode === 'official' ? 'active' : ''}
+                  onClick={() => setKnockoutMode('official')}
+                  type="button"
+                >
+                  Official bracket
+                </button>
+                <button
+                  className={knockoutMode === 'whatif' ? 'active' : ''}
+                  onClick={() => setKnockoutMode('whatif')}
+                  type="button"
+                >
+                  My What If bracket
+                </button>
+              </div>
+
+              <KnockoutBoard
+                isWhatIf={knockoutMode === 'whatif'}
+                knockout={
+                  knockoutMode === 'whatif'
+                    ? scenarioKnockout
+                    : officialKnockout
+                }
+                matchByNumber={backend.matchByNumber}
+                onPickWinner={pickWinner}
+                onReset={resetKnockoutPicks}
+                predictions={
+                  knockoutMode === 'whatif'
+                    ? backend.knockoutPredictions
+                    : {}
+                }
+                tournament={
+                  knockoutMode === 'whatif'
+                    ? scenarioTournament
+                    : actualTournament
+                }
+              />
+            </div>
+          ) : null}
+
+          {section === 'leaderboard' ? (
             <Leaderboard
               currentUserId={backend.user?.id}
               loading={backend.loading}
