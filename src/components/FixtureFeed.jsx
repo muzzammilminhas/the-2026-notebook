@@ -73,9 +73,24 @@ function formatDay(dateKey) {
   }).format(new Date(`${dateKey}T12:00:00`))
 }
 
+function formatSyncTime(value) {
+  if (!value) return null
+  return new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(new Date(value))
+}
+
 function matchStatus(match) {
   if (!match) return { label: 'Feed pending', className: 'pending' }
-  if (match.status === 'live') return { label: 'Live', className: 'live' }
+  if (match.status === 'live') {
+    const matchTime = match.source_payload?.matchTime
+    return {
+      label: matchTime ? `Live - ${matchTime}` : 'Live',
+      className: 'live',
+    }
+  }
   if (match.status === 'finished') {
     return {
       label: match.verified ? 'Final - verified' : 'Final - checking',
@@ -144,6 +159,11 @@ export function FixtureFeed({
               const editable = isWhatIf && !locked
               const shownScore = editable ? prediction : official
               const resultLabel = predictionResult(prediction)
+              const syncedAt =
+                !isWhatIf &&
+                (match?.status === 'live' || match?.status === 'finished')
+                  ? formatSyncTime(match.synced_at)
+                  : null
 
               return (
                 <article
@@ -201,6 +221,11 @@ export function FixtureFeed({
                     <span className={`match-status ${status.className}`}>
                       {savingMatches[fixture.id] ? 'Saving...' : status.label}
                     </span>
+                    {syncedAt ? (
+                      <small className="result-timestamp">
+                        Updated {syncedAt}
+                      </small>
+                    ) : null}
                     {isWhatIf && locked && isScoreComplete(prediction) ? (
                       <small>
                         Pick {prediction.home}-{prediction.away}

@@ -1851,6 +1851,12 @@ td:nth-child(2) small {
   font-size: 8px;
 }
 
+.fixture-state .result-timestamp {
+  color: #767d78;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
 .fixture-state small strong {
   color: #777f7a;
   font-size: 8px;
