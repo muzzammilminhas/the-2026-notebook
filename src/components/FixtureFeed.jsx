@@ -73,21 +73,12 @@ function formatDay(dateKey) {
   }).format(new Date(`${dateKey}T12:00:00`))
 }
 
-function formatSyncTime(value) {
-  if (!value) return null
-  return new Intl.DateTimeFormat(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-    second: '2-digit',
-  }).format(new Date(value))
-}
-
 function matchStatus(match) {
   if (!match) return { label: 'Feed pending', className: 'pending' }
   if (match.status === 'live') {
     const matchTime = match.source_payload?.matchTime
     return {
-      label: matchTime ? `Live - ${matchTime}` : 'Live',
+      label: matchTime && matchTime !== "0'" ? matchTime : 'Live',
       className: 'live',
     }
   }
@@ -117,6 +108,7 @@ export function FixtureFeed({
   actualScores,
   fixtures,
   mode,
+  onOpenDetails,
   onScoreChange,
   predictions,
   savingMatches,
@@ -159,11 +151,16 @@ export function FixtureFeed({
               const editable = isWhatIf && !locked
               const shownScore = editable ? prediction : official
               const resultLabel = predictionResult(prediction)
-              const syncedAt =
-                !isWhatIf &&
-                (match?.status === 'live' || match?.status === 'finished')
-                  ? formatSyncTime(match.synced_at)
-                  : null
+              const openDetails = (event) => {
+                if (
+                  event?.target?.closest?.(
+                    'button, input, select, textarea, a',
+                  )
+                ) {
+                  return
+                }
+                onOpenDetails(fixture)
+              }
 
               return (
                 <article
@@ -171,6 +168,7 @@ export function FixtureFeed({
                     isScoreComplete(shownScore) ? 'complete' : ''
                   } ${locked ? 'locked' : ''}`}
                   key={fixture.id}
+                  onClick={openDetails}
                 >
                   <div className="fixture-identity">
                     <strong>M{match?.match_number ?? '?'}</strong>
@@ -221,11 +219,6 @@ export function FixtureFeed({
                     <span className={`match-status ${status.className}`}>
                       {savingMatches[fixture.id] ? 'Saving...' : status.label}
                     </span>
-                    {syncedAt ? (
-                      <small className="result-timestamp">
-                        Updated {syncedAt}
-                      </small>
-                    ) : null}
                     {isWhatIf && locked && isScoreComplete(prediction) ? (
                       <small>
                         Pick {prediction.home}-{prediction.away}
@@ -234,6 +227,16 @@ export function FixtureFeed({
                         </strong>
                       </small>
                     ) : null}
+                    <button
+                      aria-label={`Open ${TEAMS[fixture.homeId].name} versus ${
+                        TEAMS[fixture.awayId].name
+                      } match details`}
+                      className="fixture-details-button"
+                      onClick={() => onOpenDetails(fixture)}
+                      type="button"
+                    >
+                      Match details
+                    </button>
                   </div>
                 </article>
               )

@@ -6,6 +6,7 @@ import { FixtureFeed } from './components/FixtureFeed'
 import { FixtureFilters } from './components/FixtureFilters'
 import { KnockoutBoard } from './components/KnockoutBoard'
 import { Leaderboard } from './components/Leaderboard'
+import { MatchDetailsDialog } from './components/MatchDetailsDialog'
 import { ScenarioStandingsPanel } from './components/ScenarioStandingsPanel'
 import { TournamentStandings } from './components/TournamentStandings'
 import {
@@ -35,6 +36,7 @@ function App() {
   })
   const [notice, setNotice] = useState('')
   const [authOpen, setAuthOpen] = useState(false)
+  const [selectedFixture, setSelectedFixture] = useState(null)
 
   const predictionScores = useMemo(
     () =>
@@ -276,6 +278,7 @@ function App() {
                   actualScores={backend.actualScores}
                   fixtures={filteredFixtures}
                   mode={section}
+                  onOpenDetails={setSelectedFixture}
                   onScoreChange={updatePrediction}
                   predictions={backend.predictions}
                   savingMatches={backend.savingMatches}
@@ -361,6 +364,13 @@ function App() {
           onClose={() => setAuthOpen(false)}
           onSignIn={backend.signIn}
           onSignUp={backend.signUp}
+        />
+      ) : null}
+      {selectedFixture?.match ? (
+        <MatchDetailsDialog
+          fixture={selectedFixture}
+          match={selectedFixture.match}
+          onClose={() => setSelectedFixture(null)}
         />
       ) : null}
     </div>
