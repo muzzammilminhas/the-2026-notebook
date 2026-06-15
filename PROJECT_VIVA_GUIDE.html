@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The 2026 Notebook - Project and Backend Guide</title>
+  <style>
+    :root {
+      --navy: #14233b;
+      --blue: #155dc5;
+      --paper: #f7f1df;
+      --ink: #1f2d40;
+      --muted: #66717b;
+      --green: #15805f;
+      --amber: #bd7b13;
+      --red: #b74040;
+      --line: rgba(20, 35, 59, .14);
+      --card: rgba(255, 255, 255, .62);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      line-height: 1.55;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      content: "";
+      background:
+        linear-gradient(90deg, transparent 0 6%, rgba(206, 66, 66, .12) 6.05%, transparent 6.1%),
+        repeating-linear-gradient(to bottom, transparent 0 31px, rgba(55, 111, 174, .08) 32px);
+      pointer-events: none;
+    }
+
+    a { color: var(--blue); }
+    code {
+      padding: 2px 5px;
+      color: #123d78;
+      background: rgba(21, 93, 197, .08);
+      border-radius: 4px;
+      font-size: .92em;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 235px minmax(0, 1fr);
+      max-width: 1440px;
+      min-height: 100vh;
+      margin: 0 auto;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 28px 20px;
+      color: white;
+      background: var(--navy);
+      overflow-y: auto;
+    }
+
+    aside .mark {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 17px;
+      border: 2px solid #72a5f2;
+      border-radius: 50%;
+      font-family: Georgia, serif;
+      font-size: 21px;
+      font-weight: 800;
+    }
+
+    aside h1 {
+      margin: 0;
+      font-family: Georgia, serif;
+      font-size: 22px;
+      line-height: 1.15;
+    }
+
+    aside > p {
+      margin: 8px 0 24px;
+      color: #aebbd0;
+      font-size: 12px;
+    }
+
+    nav { display: grid; gap: 4px; }
+    nav a {
+      padding: 8px 10px;
+      color: #c8d3e4;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    nav a:hover { color: white; background: rgba(255, 255, 255, .08); }
+
+    .verified {
+      margin-top: 24px;
+      padding: 12px;
+      color: #bddfce;
+      background: rgba(21, 128, 95, .18);
+      border: 1px solid rgba(121, 212, 173, .25);
+      border-radius: 8px;
+      font-size: 10px;
+    }
+
+    main {
+      width: min(100%, 1050px);
+      padding: 48px 46px 90px;
+    }
+
+    .hero {
+      padding-bottom: 31px;
+      border-bottom: 2px solid var(--blue);
+    }
+    .eyebrow {
+      color: var(--blue);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .hero h2 {
+      max-width: 850px;
+      margin: 8px 0 12px;
+      color: var(--navy);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(40px, 6vw, 72px);
+      line-height: .97;
+    }
+    .hero p {
+      max-width: 760px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    section { scroll-margin-top: 24px; }
+    .section { padding-top: 38px; }
+    .section-title {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .section-title span {
+      color: var(--blue);
+      font-family: Georgia, serif;
+      font-style: italic;
+    }
+    .section-title h3 {
+      margin: 0;
+      color: var(--navy);
+      font-family: Georgia, serif;
+      font-size: 30px;
+    }
+
+    .say-this {
+      padding: 24px;
+      background: var(--navy);
+      color: white;
+      border-radius: 10px;
+      box-shadow: 0 18px 50px rgba(20, 35, 59, .14);
+    }
+    .say-this strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #83b6ff;
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .say-this p {
+      margin: 0;
+      font-family: Georgia, serif;
+      font-size: 19px;
+      line-height: 1.6;
+    }
+
+    .grid-2, .grid-3 {
+      display: grid;
+      gap: 14px;
+    }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .card {
+      padding: 18px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+    }
+    .card h4 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-family: Georgia, serif;
+      font-size: 19px;
+    }
+    .card p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin: 17px 0;
+    }
+    .flow > div {
+      position: relative;
+      min-height: 116px;
+      display: grid;
+      align-content: center;
+      gap: 5px;
+      padding: 13px;
+      text-align: center;
+      background: rgba(255, 255, 255, .65);
+      border: 1px solid rgba(21, 93, 197, .25);
+      border-radius: 8px;
+    }
+    .flow > div:not(:last-child)::after {
+      position: absolute;
+      z-index: 2;
+      top: 45%;
+      right: -10px;
+      content: ">";
+      color: var(--blue);
+      font-weight: 900;
+    }
+    .flow strong { color: var(--navy); font-size: 12px; }
+    .flow span { color: var(--muted); font-size: 10px; }
+
+    .timeline { display: grid; gap: 10px; counter-reset: steps; }
+    .step {
+      position: relative;
+      padding: 16px 18px 16px 58px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      counter-increment: steps;
+    }
+    .step::before {
+      position: absolute;
+      top: 15px;
+      left: 16px;
+      width: 27px;
+      height: 27px;
+      display: grid;
+      place-items: center;
+      content: counter(steps);
+      color: white;
+      background: var(--blue);
+      border-radius: 50%;
+      font-weight: 800;
+    }
+    .step strong { display: block; color: var(--navy); }
+    .step p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+
+    .truth {
+      margin: 15px 0;
+      padding: 15px 17px;
+      color: #704a0e;
+      background: rgba(225, 158, 47, .13);
+      border-left: 4px solid var(--amber);
+      border-radius: 5px;
+      font-size: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, .48);
+      font-size: 12px;
+    }
+    th, td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: white;
+      background: var(--navy);
+      font-size: 9px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    td:first-child { color: var(--navy); font-weight: 800; }
+
+    .file-map {
+      display: grid;
+      gap: 7px;
+    }
+    .file-row {
+      display: grid;
+      grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr);
+      gap: 14px;
+      padding: 11px 13px;
+      background: rgba(255, 255, 255, .5);
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+    }
+    .file-row code { align-self: start; overflow-wrap: anywhere; }
+    .file-row span { color: var(--muted); }
+
+    details {
+      margin-bottom: 8px;
+      background: rgba(255, 255, 255, .55);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+    }
+    summary {
+      padding: 13px 15px;
+      color: var(--navy);
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    details p {
+      margin: 0;
+      padding: 0 15px 15px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .memory {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 9px;
+    }
+    .memory div {
+      padding: 14px;
+      text-align: center;
+      background: rgba(21, 93, 197, .08);
+      border: 1px solid rgba(21, 93, 197, .18);
+      border-radius: 8px;
+    }
+    .memory strong {
+      display: block;
+      color: var(--blue);
+      font-family: Georgia, serif;
+      font-size: 20px;
+    }
+    .memory span { color: var(--muted); font-size: 10px; }
+
+    .good { color: var(--green); }
+    .bad { color: var(--red); }
+    footer {
+      margin-top: 44px;
+      padding-top: 18px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: 11px;
+    }
+
+    @media print {
+      aside { display: none; }
+      .shell { display: block; }
+      main { width: 100%; padding: 24px; }
+      details { break-inside: avoid; }
+    }
+
+    @media (max-width: 880px) {
+      .shell { grid-template-columns: 1fr; }
+      aside { position: relative; height: auto; }
+      nav { grid-template-columns: repeat(2, 1fr); }
+      main { padding: 34px 20px 70px; }
+      .flow { grid-template-columns: 1fr; }
+      .flow > div:not(:last-child)::after {
+        top: auto;
+        right: 50%;
+        bottom: -13px;
+        transform: rotate(90deg);
+      }
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .grid-2, .memory { grid-template-columns: 1fr 1fr; }
+      .file-row { grid-template-columns: 1fr; gap: 6px; }
+      .hero h2 { font-size: 43px; }
+      table { font-size: 10px; }
+      th, td { padding: 9px 7px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <div class="mark">26</div>
+      <h1>Project Viva Guide</h1>
+      <p>The 2026 Notebook: backend, live data, predictions and deployment.</p>
+      <nav>
+        <a href="#quick-answer">Quick answer</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#live-flow">Live data flow</a>
+        <a href="#two-paths">Two FIFA paths</a>
+        <a href="#database">Database</a>
+        <a href="#predictions">Predictions</a>
+        <a href="#scoring">Scoring</a>
+        <a href="#simulation">What-if engine</a>
+        <a href="#security">Security</a>
+        <a href="#deployment">Deployment</a>
+        <a href="#files">File map</a>
+        <a href="#questions">Viva questions</a>
+      </nav>
+      <div class="verified">
+        Production checked on June 15, 2026: cron active every minute and recent runs updated all 104 fixtures.
+      </div>
+    </aside>
+
+    <main>
+      <header class="hero">
+        <span class="eyebrow">Know what you built</span>
+        <h2>The 2026 Notebook, explained.</h2>
+        <p>
+          Your original Qatar 2022 handwritten notebook became a React PWA with a
+          Supabase backend, automatic FIFA result syncing, secure predictions,
+          scoring, standings, knockout simulation and a public leaderboard.
+        </p>
+      </header>
+
+      <section class="section" id="quick-answer">
+        <div class="section-title"><span>01</span><h3>The answer people will ask for</h3></div>
+        <div class="say-this">
+          <strong>Say this in 30 seconds</strong>
+          <p>
+            "I use FIFA's public competition endpoints as the official source.
+            A Supabase Cron job calls my Edge Function every minute. That function
+            downloads all 104 World Cup fixtures, validates them, maps FIFA teams
+            to my database teams, and upserts statuses and scores into Postgres.
+            My React app reads the cached results from Supabase every minute, so
+            users do not independently hammer the main FIFA schedule endpoint.
+            For a live match's minute and detailed stats, the browser fetches
+            FIFA's match-specific live endpoints on demand. Once a result is
+            verified, Postgres database triggers score the predictions and update the leaderboard."
+          </p>
+        </div>
+        <div class="truth">
+          <strong>Important wording:</strong> call it near-live, not millisecond real-time.
+          The central result poll and frontend refresh both run every 60 seconds, so normal
+          score latency is roughly under one to two minutes. Live minute data is also
+          refreshed once per minute.
+        </div>
+      </section>
+
+      <section class="section" id="architecture">
+        <div class="section-title"><span>02</span><h3>Architecture</h3></div>
+        <div class="grid-3">
+          <article class="card">
+            <h4>Frontend</h4>
+            <p>React 19 + Vite. It renders fixtures, predictions, tables, brackets, match details and leaderboard.</p>
+          </article>
+          <article class="card">
+            <h4>Backend</h4>
+            <p>Supabase provides Postgres, Auth, Row Level Security, Edge Functions, Vault and Cron.</p>
+          </article>
+          <article class="card">
+            <h4>Hosting</h4>
+            <p>GitHub Actions tests and builds the app, then GitHub Pages hosts the static frontend.</p>
+          </article>
+        </div>
+        <div class="flow">
+          <div><strong>FIFA APIs</strong><span>Official fixtures, scores, minute, events and stats</span></div>
+          <div><strong>Edge Function</strong><span>Fetches and validates the 104-match feed</span></div>
+          <div><strong>Supabase Postgres</strong><span>Stores official state, users and predictions</span></div>
+          <div><strong>React App</strong><span>Reads state and runs presentation logic</span></div>
+          <div><strong>User</strong><span>Sees results and plays What If</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="live-flow">
+        <div class="section-title"><span>03</span><h3>How a score reaches the screen</h3></div>
+        <div class="timeline">
+          <div class="step">
+            <strong>Supabase Cron fires every minute</strong>
+            <p><code>* * * * *</code> calls the protected <code>sync-results</code> Edge Function using an API secret stored in Supabase Vault.</p>
+          </div>
+          <div class="step">
+            <strong>The Edge Function calls FIFA</strong>
+            <p>It requests <code>api.fifa.com/api/v3/calendar/matches</code> for competition 17, season 285023, across the complete tournament dates.</p>
+          </div>
+          <div class="step">
+            <strong>It rejects suspicious data</strong>
+            <p>The response must contain exactly 104 fixtures. Unknown FIFA fixture IDs cause failure rather than silently corrupting the database.</p>
+          </div>
+          <div class="step">
+            <strong>It normalizes and maps data</strong>
+            <p>FIFA status numbers become <code>scheduled</code>, <code>live</code>, <code>finished</code>, etc. Team names are normalized and matched through aliases.</p>
+          </div>
+          <div class="step">
+            <strong>It upserts the matches table</strong>
+            <p>Kickoff, teams, score, winner, status, source payload, verification state and sync timestamp are stored in Postgres.</p>
+          </div>
+          <div class="step">
+            <strong>Database triggers score predictions</strong>
+            <p>When a match changes to finished and verified, PostgreSQL calculates every affected user's points and recalculates leaderboard totals.</p>
+          </div>
+          <div class="step">
+            <strong>The browser refreshes Supabase</strong>
+            <p><code>useWorldCupBackend()</code> reads matches and leaderboard on load and every 60 seconds, then React re-renders the UI.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="two-paths">
+        <div class="section-title"><span>04</span><h3>The two FIFA data paths</h3></div>
+        <div class="grid-2">
+          <article class="card">
+            <h4>A. Persistent official result path</h4>
+            <p>
+              FIFA calendar API -> Edge Function -> <code>matches</code> table ->
+              React. This is the authoritative path for scores, match status,
+              winners, prediction locking and scoring.
+            </p>
+          </article>
+          <article class="card">
+            <h4>B. On-demand detail path</h4>
+            <p>
+              Browser -> FIFA live endpoint and FIFA stats endpoint -> match
+              modal. This supplies minute, venue, weather, referee, attendance,
+              events, lineups and statistics when a card is opened.
+            </p>
+          </article>
+        </div>
+        <table>
+          <thead><tr><th>Data</th><th>Endpoint / source</th><th>Stored?</th><th>Refresh</th></tr></thead>
+          <tbody>
+            <tr><td>Official schedule and scores</td><td>FIFA calendar matches API</td><td>Yes, Postgres</td><td>Central poll every minute</td></tr>
+            <tr><td>Live match minute</td><td>FIFA live football API; timeline fallback</td><td>No permanent write</td><td>Browser every minute for live games</td></tr>
+            <tr><td>Events and lineups</td><td>FIFA live football API</td><td>Client cache</td><td>When modal opens; every minute if live</td></tr>
+            <tr><td>Team statistics</td><td>FIFA FDH match stats API</td><td>Client cache</td><td>When modal opens</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section" id="database">
+        <div class="section-title"><span>05</span><h3>Database mental model</h3></div>
+        <div class="grid-3">
+          <article class="card"><h4><code>teams</code></h4><p>48 teams, group IDs and aliases used to safely match FIFA naming variations.</p></article>
+          <article class="card"><h4><code>matches</code></h4><p>All 104 fixtures, official timing, teams, score, winner, status and source metadata.</p></article>
+          <article class="card"><h4><code>profiles</code></h4><p>Public nickname, avatar seed and favourite team linked to Supabase Auth user ID.</p></article>
+          <article class="card"><h4><code>predictions</code></h4><p>Group score predictions with points, grade and scoring timestamp.</p></article>
+          <article class="card"><h4><code>knockout_predictions</code></h4><p>Predicted winner for each knockout match, with 2-point scoring.</p></article>
+          <article class="card"><h4><code>leaderboard</code></h4><p>Precalculated totals so ranking is fast and does not recompute every page load.</p></article>
+          <article class="card"><h4><code>result_sync_runs</code></h4><p>Operational log for each FIFA sync: success/failure, received fixtures and timing.</p></article>
+          <article class="card"><h4><code>result_corrections</code></h4><p>Audit log if FIFA later changes an already verified official result.</p></article>
+          <article class="card"><h4>Public views</h4><p>Safe joined data for leaderboard and post-kickoff community predictions.</p></article>
+        </div>
+      </section>
+
+      <section class="section" id="predictions">
+        <div class="section-title"><span>06</span><h3>Prediction lifecycle</h3></div>
+        <div class="timeline">
+          <div class="step">
+            <strong>User signs in</strong>
+            <p>Supabase Auth creates the account. A database trigger automatically creates the matching profile and leaderboard row.</p>
+          </div>
+          <div class="step">
+            <strong>User enters a complete score</strong>
+            <p>The frontend performs an upsert using the unique pair <code>(user_id, match_id)</code>, so changing a prediction updates the same row.</p>
+          </div>
+          <div class="step">
+            <strong>Database checks ownership and deadline</strong>
+            <p>RLS ensures the user writes only their own row. A trigger checks server time and rejects writes when status is not scheduled or kickoff has passed.</p>
+          </div>
+          <div class="step">
+            <strong>At kickoff the prediction locks</strong>
+            <p>The client disables editing for UX, but the real security is the Postgres trigger. Changing a laptop clock or calling the REST API cannot bypass it.</p>
+          </div>
+          <div class="step">
+            <strong>After kickoff community picks unlock</strong>
+            <p>RLS permits public reading only after the official kickoff boundary. Before kickoff, users can see their own prediction but not anyone else's.</p>
+          </div>
+          <div class="step">
+            <strong>After verification the grade appears</strong>
+            <p>Community views expose points and result grade only when the match is both finished and verified.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="scoring">
+        <div class="section-title"><span>07</span><h3>Scoring and leaderboard</h3></div>
+        <div class="memory">
+          <div><strong>3</strong><span>Exact group score</span></div>
+          <div><strong>1</strong><span>Correct win/draw/loss outcome</span></div>
+          <div><strong>2</strong><span>Correct knockout winner</span></div>
+          <div><strong>0</strong><span>Wrong prediction</span></div>
+        </div>
+        <div class="grid-2" style="margin-top:14px">
+          <article class="card">
+            <h4>Why scoring is in Postgres</h4>
+            <p>
+              Users cannot award themselves points. Only the database trigger reacts
+              to a verified official match update and writes the grade and points.
+            </p>
+          </article>
+          <article class="card">
+            <h4>How ranking stays quick</h4>
+            <p>
+              <code>private.recalculate_leaderboard()</code> sums group and knockout
+              points only for affected users and updates one leaderboard row per user.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="simulation">
+        <div class="section-title"><span>08</span><h3>How the What If simulation works</h3></div>
+        <div class="grid-2">
+          <article class="card">
+            <h4>Real results replace guesses</h4>
+            <p>
+              <code>buildPredictionScores()</code> uses a user's prediction before
+              kickoff, but uses the official score after the match starts and a real
+              score exists. That preserves the original handwritten-notebook idea.
+            </p>
+          </article>
+          <article class="card">
+            <h4>Tables are calculated in React</h4>
+            <p>
+              <code>calculateTournament()</code> applies points, goal difference,
+              goals scored and mini-table tie logic for all 12 groups and the best
+              eight third-place teams.
+            </p>
+          </article>
+          <article class="card">
+            <h4>Knockout routing is deterministic</h4>
+            <p>
+              <code>buildKnockout()</code> uses official group seeds, FIFA Annex C
+              third-place routing, and winners from previous matches to build the path.
+            </p>
+          </article>
+          <article class="card">
+            <h4>Bad bracket states are prevented</h4>
+            <p>
+              A user cannot pick a team not present in a matchup. Changing an earlier
+              winner clears dependent later-round picks. Clicking the selected winner
+              again removes it.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="security">
+        <div class="section-title"><span>09</span><h3>Security you should mention</h3></div>
+        <table>
+          <thead><tr><th>Risk</th><th>Protection</th></tr></thead>
+          <tbody>
+            <tr><td>User edits someone else's prediction</td><td>RLS compares <code>auth.uid()</code> with <code>user_id</code>.</td></tr>
+            <tr><td>User predicts after kickoff</td><td>Database trigger uses Postgres <code>now()</code>, official kickoff and match status.</td></tr>
+            <tr><td>User reads future community picks</td><td>RLS exposes other users' rows only after kickoff.</td></tr>
+            <tr><td>User gives themselves points</td><td>Scoring columns are reset on writes; verified-result trigger calculates points.</td></tr>
+            <tr><td>Public frontend contains an admin key</td><td>It contains only the publishable key. Service role stays inside the Edge Function environment.</td></tr>
+            <tr><td>Anyone invokes the sync worker</td><td>Edge Function checks an API secret held in Supabase Vault/Cron.</td></tr>
+            <tr><td>FIFA sends incomplete tournament data</td><td>Worker expects exactly 104 fixtures and fails safely otherwise.</td></tr>
+            <tr><td>FIFA corrects a final result later</td><td>Previous and corrected values are recorded in <code>result_corrections</code>.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section" id="deployment">
+        <div class="section-title"><span>10</span><h3>Deployment and PWA</h3></div>
+        <div class="flow">
+          <div><strong>Push to main</strong><span>GitHub receives a commit</span></div>
+          <div><strong>GitHub Actions</strong><span>Runs npm ci, tests, lint and build</span></div>
+          <div><strong>Vite output</strong><span>Creates static files in dist</span></div>
+          <div><strong>GitHub Pages</strong><span>Publishes the frontend</span></div>
+          <div><strong>PWA</strong><span>Manifest + service worker enable installation</span></div>
+        </div>
+        <p class="truth">
+          GitHub Pages hosts only the frontend. Supabase is the backend and keeps
+          running independently. Therefore live score syncing does not depend on
+          a user's browser being open.
+        </p>
+      </section>
+
+      <section class="section" id="files">
+        <div class="section-title"><span>11</span><h3>Exact file map</h3></div>
+        <div class="file-map">
+          <div class="file-row"><code>supabase/functions/sync-results/index.ts</code><span>Main server-side FIFA importer, validation, normalization, correction audit and match upsert.</span></div>
+          <div class="file-row"><code>supabase/migrations/20260611212851_schedule_result_sync.sql</code><span>One-minute Cron schedule and protected Edge Function call.</span></div>
+          <div class="file-row"><code>supabase/migrations/20260611205011_create_world_cup_backend.sql</code><span>Core tables, auth profile trigger, group prediction lock, RLS and original scoring schema.</span></div>
+          <div class="file-row"><code>supabase/migrations/20260611210511_official_schedule_and_knockout_scoring.sql</code><span>Official 104-match schedule, knockout predictions and final scoring/leaderboard functions.</span></div>
+          <div class="file-row"><code>supabase/migrations/20260612143000_knockout_safety_and_favourite_team.sql</code><span>Favourite team, profile creation, knockout dependency validation and safety rules.</span></div>
+          <div class="file-row"><code>supabase/migrations/20260615170000_reveal_locked_predictions.sql</code><span>Community prediction views and post-kickoff reveal fields.</span></div>
+          <div class="file-row"><code>supabase/migrations/20260615172500_optimize_prediction_reveal_policies.sql</code><span>Final own-or-locked RLS rule for prediction visibility.</span></div>
+          <div class="file-row"><code>src/hooks/useWorldCupBackend.js</code><span>Frontend Supabase adapter: auth, reads, 60-second refresh, saves and score-state transformation.</span></div>
+          <div class="file-row"><code>src/lib/matchDetails.js</code><span>Direct FIFA live details, clock, events, lineups, weather, venue and stats normalization.</span></div>
+          <div class="file-row"><code>src/lib/tournamentEngine.js</code><span>Group standings, tie logic, best third places, knockout construction and scenario impacts.</span></div>
+          <div class="file-row"><code>src/App.jsx</code><span>Connects backend state to Actual, What If, standings, knockout and leaderboard screens.</span></div>
+          <div class="file-row"><code>src/components/MatchDetailsDialog.jsx</code><span>Match-centre UI and post-kickoff community predictions.</span></div>
+          <div class="file-row"><code>.github/workflows/deploy.yml</code><span>Automated tests, production build and GitHub Pages deployment.</span></div>
+          <div class="file-row"><code>public/manifest.webmanifest + public/sw.js</code><span>Installable PWA metadata, icons, app shell cache and network-first updates.</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="questions">
+        <div class="section-title"><span>12</span><h3>Likely questions and strong answers</h3></div>
+
+        <details open>
+          <summary>Is this scraping Google?</summary>
+          <p>No. The main source is FIFA's own JSON endpoints. The system reads structured API responses, not Google search pages or HTML.</p>
+        </details>
+        <details>
+          <summary>Is it truly real-time?</summary>
+          <p>It is near-live polling. Supabase imports official results every minute and the frontend refreshes every minute. This is simpler and cheaper than maintaining WebSocket infrastructure, and it is appropriate for a small free project.</p>
+        </details>
+        <details>
+          <summary>Why store FIFA data in Supabase instead of calling FIFA from every visitor?</summary>
+          <p>Central caching gives every user the same official state, reduces duplicate provider traffic, enables scoring triggers, keeps an audit trail and avoids making correctness depend on each visitor's browser.</p>
+        </details>
+        <details>
+          <summary>Why are match details fetched directly?</summary>
+          <p>They are optional and opened on demand. Persisting every event, lineup and statistic would add database complexity and writes. The authoritative score still comes through the centralized backend.</p>
+        </details>
+        <details>
+          <summary>What if FIFA is unavailable?</summary>
+          <p>The previous Supabase result remains visible. The sync run is marked failed, the worker retries on the next minute, and match-details UI displays a graceful unavailable state. No fabricated result is inserted.</p>
+        </details>
+        <details>
+          <summary>Can a user change the system clock and submit late?</summary>
+          <p>No. The frontend check is only convenience. The database trigger uses Supabase/Postgres server time and rejects the write independently.</p>
+        </details>
+        <details>
+          <summary>How do laptop and mobile share predictions?</summary>
+          <p>Predictions are stored against the Supabase Auth user UUID, not localStorage or a device ID. Signing into the same account loads the same rows on any device.</p>
+        </details>
+        <details>
+          <summary>How are points protected?</summary>
+          <p>Users submit only predicted values. Database logic resets scoring fields and only the verified official-result trigger calculates points and updates leaderboard totals.</p>
+        </details>
+        <details>
+          <summary>How does community prediction privacy work?</summary>
+          <p>Before kickoff, RLS allows a user to read only their own row. After kickoff, the policy permits locked predictions to be read publicly. Grades stay hidden until official verification.</p>
+        </details>
+        <details>
+          <summary>What is the biggest external risk?</summary>
+          <p>FIFA's public endpoints do not provide this hobby project a contractual uptime guarantee. The design reduces that risk through database caching, strict validation, retries and correction auditing, but it cannot guarantee FIFA will never change an endpoint.</p>
+        </details>
+        <details>
+          <summary>What part is your original product idea?</summary>
+          <p>The product concept is the digital evolution of your 2022 handwritten process: record real results as the tournament progresses, simulate alternate paths, replace guesses with reality after kickoff, and compare predictions with friends. The engineering implements that concept.</p>
+        </details>
+      </section>
+
+      <section class="section">
+        <div class="section-title"><span>13</span><h3>Final memory formula</h3></div>
+        <div class="say-this">
+          <strong>Remember these five verbs</strong>
+          <p>
+            FIFA <b>publishes</b> -> Cron <b>calls</b> -> Edge Function
+            <b>validates and stores</b> -> Postgres <b>locks and scores</b> ->
+            React <b>reads and displays</b>.
+          </p>
+        </div>
+      </section>
+
+      <footer>
+        Prepared from the current repository and verified production Supabase state.
+        Live product: https://muzzammilminhas.github.io/the-2026-notebook/
+      </footer>
+    </main>
+  </div>
+</body>
+</html>
