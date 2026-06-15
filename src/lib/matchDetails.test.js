@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeMatchDetails, normalizeTeamStats } from './matchDetails'
+import {
+  fifaClockLabel,
+  normalizeMatchDetails,
+  normalizeTeamStats,
+} from './matchDetails'
 
 describe('match details', () => {
+  it('uses FIFA minutes and half-time period labels', () => {
+    expect(fifaClockLabel({ MatchTime: "31'", Period: 3 })).toBe("31'")
+    expect(fifaClockLabel({ MatchTime: '', Period: 4 })).toBe('HT')
+    expect(fifaClockLabel({ MatchTime: "0'", Period: 3 })).toBeNull()
+  })
+
   it('normalizes key team statistics', () => {
     const stats = normalizeTeamStats(
       {
@@ -69,4 +79,3 @@ describe('match details', () => {
     expect(details.ifesId).toBe('123')
   })
 })
-

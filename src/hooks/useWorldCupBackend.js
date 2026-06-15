@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { GROUP_IDS, TEAMS } from '../data/tournament'
+import { fifaClockLabel } from '../lib/matchDetails'
 import { isScoreComplete } from '../lib/tournamentEngine'
 import { supabase } from '../lib/supabase'
 
@@ -13,6 +14,61 @@ const EMPTY_STATE = {
   loading: true,
   error: null,
   lastUpdated: null,
+}
+
+async function addLiveMatchClocks(matches) {
+  const liveMatches = matches.filter(
+    (match) => match.status === 'live' && match.source_fixture_id,
+  )
+  if (!liveMatches.length) return matches
+
+  const clocks = await Promise.all(
+    liveMatches.map(async (match) => {
+      try {
+        const response = await fetch(
+          `https://api.fifa.com/api/v3/live/football/${match.source_fixture_id}?language=en`,
+          {
+            headers: { Accept: 'application/json' },
+            signal: AbortSignal.timeout(10_000),
+          },
+        )
+        if (!response.ok) return [match.id, null]
+        const details = await response.json()
+        const directClock = fifaClockLabel(details)
+        if (directClock) return [match.id, directClock]
+
+        const timelineResponse = await fetch(
+          `https://api.fifa.com/api/v3/timelines/${match.source_fixture_id}?language=en`,
+          {
+            headers: { Accept: 'application/json' },
+            signal: AbortSignal.timeout(10_000),
+          },
+        )
+        if (!timelineResponse.ok) return [match.id, null]
+        const timeline = await timelineResponse.json()
+        const latestMinute = timeline.Event
+          ?.map((event) => event.MatchMinute)
+          .filter(Boolean)
+          .at(-1)
+        return [match.id, latestMinute ?? null]
+      } catch {
+        return [match.id, null]
+      }
+    }),
+  )
+  const clockByMatch = new Map(clocks)
+
+  return matches.map((match) => {
+    const matchTime = clockByMatch.get(match.id)
+    if (!matchTime) return match
+    return {
+      ...match,
+      source_payload: {
+        ...match.source_payload,
+        matchTime,
+      },
+    }
+  })
 }
 
 function matchesToState(matches) {
@@ -72,6 +128,7 @@ export function useWorldCupBackend() {
 
       const firstError = matchesResult.error ?? leaderboardResult.error
       if (firstError) throw firstError
+      const matches = await addLiveMatchClocks(matchesResult.data)
 
       let profile = null
       let predictionRows = []
@@ -122,7 +179,7 @@ export function useWorldCupBackend() {
       setState({
         user,
         profile,
-        matches: matchesResult.data,
+        matches,
         predictions,
         knockoutPredictions,
         leaderboard: leaderboardResult.data,

@@ -14,6 +14,14 @@ const KEY_STATS = [
   ['RedCards', 'Red cards', 'number'],
 ]
 
+export function fifaClockLabel(match) {
+  const matchTime = String(match?.MatchTime ?? '').trim()
+  if (matchTime && matchTime !== "0'") return matchTime
+  if (match?.Period === 4) return 'HT'
+  if (match?.Period === 8) return 'ET HT'
+  return null
+}
+
 function localized(value, fallback = '') {
   return value?.find((entry) => entry.Locale === 'en-GB')?.Description
     ?? value?.[0]?.Description
@@ -139,7 +147,8 @@ export function normalizeMatchDetails(live, rawStats = null) {
   return {
     id: String(live.IdMatch),
     status: live.MatchStatus,
-    matchTime: live.MatchTime,
+    matchTime: fifaClockLabel(live),
+    period: live.Period,
     date: live.Date,
     localDate: live.LocalDate,
     attendance: live.Attendance ? Number(live.Attendance) : null,
