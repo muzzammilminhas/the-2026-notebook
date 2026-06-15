@@ -27,6 +27,8 @@ tournament simulator:
   scorelines.
 - **Accounts:** email/password authentication keeps predictions, points,
   nickname, and favourite team synchronized across devices.
+- **Admin status:** the owner account can open a private sync-health dashboard
+  for FIFA worker status, match counts, prediction totals, and recent failures.
 - **Installable PWA:** Chrome and supported mobile browsers can install the
   website as a standalone app with its own icon.
 
@@ -146,6 +148,8 @@ Row Level Security and database triggers enforce the important rules:
 - The browser contains only a Supabase publishable key; the service-role key
   remains inside the Edge Function environment.
 - The scheduled worker is protected by a secret stored through Supabase Vault.
+- Admin health data is gated by an `admin_users` table and RLS, not by a
+  hardcoded frontend password.
 
 ## What-If Tournament Engine
 
@@ -176,6 +180,7 @@ The client-side tournament engine handles:
 | `public_leaderboard` | Safe public leaderboard projection |
 | `community_match_predictions` | Safe post-kickoff community prediction data |
 | `community_prediction_scores` | Aggregated post-kickoff scoreline counts |
+| `admin_users` | Owner-only admin marker used by RLS for health access |
 
 ## Technology Stack
 

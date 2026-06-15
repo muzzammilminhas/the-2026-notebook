@@ -11,6 +11,7 @@ const EMPTY_STATE = {
   predictions: {},
   knockoutPredictions: {},
   leaderboard: [],
+  isAdmin: false,
   loading: true,
   error: null,
   lastUpdated: null,
@@ -133,9 +134,10 @@ export function useWorldCupBackend() {
       let profile = null
       let predictionRows = []
       let knockoutRows = []
+      let isAdmin = false
 
       if (user) {
-        const [profileResult, predictionsResult, knockoutResult] =
+        const [profileResult, predictionsResult, knockoutResult, adminResult] =
           await Promise.all([
             supabase.from('profiles').select('*').eq('id', user.id).single(),
             supabase.from('predictions').select('*').eq('user_id', user.id),
@@ -143,6 +145,11 @@ export function useWorldCupBackend() {
               .from('knockout_predictions')
               .select('*')
               .eq('user_id', user.id),
+            supabase
+              .from('admin_users')
+              .select('user_id')
+              .eq('user_id', user.id)
+              .maybeSingle(),
           ])
         const userError =
           profileResult.error ?? predictionsResult.error ?? knockoutResult.error
@@ -150,6 +157,7 @@ export function useWorldCupBackend() {
         profile = profileResult.data
         predictionRows = predictionsResult.data
         knockoutRows = knockoutResult.data
+        isAdmin = Boolean(adminResult.data)
       }
 
       const predictions = Object.fromEntries(
@@ -183,6 +191,7 @@ export function useWorldCupBackend() {
         predictions,
         knockoutPredictions,
         leaderboard: leaderboardResult.data,
+        isAdmin: Boolean(isAdmin),
         loading: false,
         error: null,
         lastUpdated: new Date(),

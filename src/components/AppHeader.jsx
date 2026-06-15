@@ -19,6 +19,7 @@ export function AppHeader({
   scoreSummary,
   backendStatus,
   user,
+  isAdmin,
 }) {
   const [editing, setEditing] = useState(false)
   const [nickname, setNickname] = useState(profile?.nickname ?? '')
@@ -46,7 +47,7 @@ export function AppHeader({
       </div>
 
       <nav className="mode-switch primary-nav" aria-label="Notebook sections">
-        {SECTIONS.map((item) => (
+        {[...SECTIONS, ...(isAdmin ? [{ id: 'admin', label: 'Admin' }] : [])].map((item) => (
           <button
             aria-current={section === item.id ? 'page' : undefined}
             className={section === item.id ? 'active' : ''}

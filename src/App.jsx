@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import './App.css'
 import { AppHeader } from './components/AppHeader'
+import { AdminStatus } from './components/AdminStatus'
 import { AuthDialog } from './components/AuthDialog'
 import { FixtureFeed } from './components/FixtureFeed'
 import { FixtureFilters } from './components/FixtureFilters'
@@ -26,7 +27,13 @@ import {
 
 function App() {
   const backend = useWorldCupBackend()
-  const [section, setSection] = useState('actual')
+  const [section, setSection] = useState(() => {
+    const hash = window.location.hash.replace('#', '')
+    return ['actual', 'whatif', 'standings', 'knockout', 'leaderboard', 'admin']
+      .includes(hash)
+      ? hash
+      : 'actual'
+  })
   const [knockoutMode, setKnockoutMode] = useState('official')
   const [scenarioGroup, setScenarioGroup] = useState('A')
   const [fixtureFilters, setFixtureFilters] = useState({
@@ -90,6 +97,11 @@ function App() {
   function showNotice(message) {
     setNotice(message)
     window.setTimeout(() => setNotice(''), 2600)
+  }
+
+  function changeSection(nextSection) {
+    setSection(nextSection)
+    window.history.replaceState(null, '', `#${nextSection}`)
   }
 
   async function updatePrediction(fixtureId, side, value) {
@@ -206,6 +218,7 @@ function App() {
     <div className="app-shell">
       <AppHeader
         backendStatus={backend.error ? 'error' : 'online'}
+        isAdmin={backend.isAdmin}
         onProfileChange={async (profile) => {
           try {
             await backend.updateProfile(profile)
@@ -214,7 +227,7 @@ function App() {
             showNotice(error.message)
           }
         }}
-        onSectionChange={setSection}
+        onSectionChange={changeSection}
         onSignIn={() => setAuthOpen(true)}
         onSignOut={async () => {
           try {
@@ -351,6 +364,10 @@ function App() {
               loading={backend.loading}
               rows={backend.leaderboard}
             />
+          ) : null}
+
+          {section === 'admin' ? (
+            <AdminStatus isAdmin={backend.isAdmin} loading={backend.loading} />
           ) : null}
         </main>
       </div>

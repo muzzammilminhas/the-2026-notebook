@@ -1529,6 +1529,168 @@ td:nth-child(2) small {
   box-shadow: inset 3px 0 var(--ink);
 }
 
+.admin-view {
+  max-width: 1260px;
+  margin: 0 auto;
+}
+
+.admin-denied,
+.admin-error {
+  min-height: 180px;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  color: #727b78;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.34);
+  border: 1px solid rgba(31, 55, 79, 0.14);
+  border-radius: 8px;
+}
+
+.admin-denied strong,
+.admin-error strong {
+  color: var(--navy);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+}
+
+.admin-denied span,
+.admin-error span {
+  font-size: 11px;
+}
+
+.admin-health-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 26px 0;
+}
+
+.admin-health-card {
+  min-height: 136px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.36);
+  border: 1px solid rgba(31, 55, 79, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgba(50, 54, 47, 0.05);
+}
+
+.admin-health-card span {
+  color: #818883;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.admin-health-card strong {
+  color: var(--navy);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 29px;
+  line-height: 1;
+  text-transform: capitalize;
+}
+
+.admin-health-card small {
+  color: #727b78;
+  font-size: 10px;
+}
+
+.admin-health-card.success {
+  border-color: rgba(30, 139, 101, 0.34);
+  background: rgba(30, 139, 101, 0.08);
+}
+
+.admin-health-card.failed {
+  border-color: rgba(189, 70, 63, 0.34);
+  background: rgba(189, 70, 63, 0.08);
+}
+
+.admin-sync-log {
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(31, 55, 79, 0.15);
+  border-radius: 8px;
+}
+
+.admin-sync-log > header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(31, 55, 79, 0.14);
+}
+
+.admin-sync-log h3 {
+  margin: 0;
+  color: var(--navy);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+}
+
+.admin-sync-log > header > strong {
+  color: #777f7b;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-log-table {
+  overflow-x: auto;
+}
+
+.admin-log-head,
+.admin-log-table article {
+  min-width: 720px;
+  display: grid;
+  grid-template-columns: 80px 105px 110px 100px minmax(180px, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(31, 55, 79, 0.1);
+}
+
+.admin-log-head {
+  color: #858b86;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-log-table article {
+  font-size: 11px;
+}
+
+.admin-log-table article strong {
+  width: max-content;
+  padding: 4px 8px;
+  color: var(--green);
+  background: rgba(30, 139, 101, 0.1);
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+
+.admin-log-table article.failed strong {
+  color: var(--red);
+  background: rgba(189, 70, 63, 0.1);
+}
+
+.admin-log-table article.running strong {
+  color: #9b6b11;
+  background: rgba(216, 153, 40, 0.14);
+}
+
+.admin-log-table article em {
+  grid-column: 1 / -1;
+  color: var(--red);
+  font-size: 10px;
+}
+
 .leader-rank {
   color: var(--ink);
   font-family: "Segoe Print", cursive;
@@ -2729,6 +2891,10 @@ td:nth-child(2) small {
   .all-groups-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .admin-health-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -3143,6 +3309,19 @@ td:nth-child(2) small {
 
   .leaderboard-paper {
     overflow-x: auto;
+  }
+
+  .admin-health-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sync-log {
+    padding: 12px 10px;
+  }
+
+  .admin-sync-log > header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .leaderboard-labels,
