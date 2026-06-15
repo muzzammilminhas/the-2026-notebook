@@ -4,12 +4,14 @@ import {
   fetchMatchDetails,
   fifaMatchCentreUrl,
 } from '../lib/matchDetails'
+import { supabase } from '../lib/supabase'
 
 const TABS = [
   ['overview', 'Overview'],
   ['events', 'Events'],
   ['stats', 'Stats'],
   ['lineups', 'Lineups'],
+  ['community', 'Community'],
 ]
 
 function formatDate(value) {
@@ -95,10 +97,169 @@ function TeamLineup({ team }) {
   )
 }
 
-export function MatchDetailsDialog({ fixture, match, onClose }) {
+function predictionGrade(row) {
+  if (row.result_grade === 'exact') return `Exact - +${row.points}`
+  if (row.result_grade === 'outcome') return `Outcome - +${row.points}`
+  if (row.result_grade === 'wrong') return 'Wrong - +0'
+  return 'Result pending'
+}
+
+function CommunityPredictions({
+  currentUserId,
+  error,
+  fixture,
+  loading,
+  match,
+  rows,
+  scores,
+}) {
+  const started =
+    match.status !== 'scheduled'
+    || (match.kickoff_at && new Date(match.kickoff_at) <= new Date())
+
+  if (!started) {
+    return (
+      <div className="community-locked">
+        <strong>Predictions unlock at kickoff</strong>
+        <span>
+          Everyone's picks stay private until this match starts.
+        </span>
+      </div>
+    )
+  }
+  if (loading) {
+    return (
+      <div className="community-locked">
+        <strong>Opening the community notebook...</strong>
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div className="match-details-error">
+        <strong>Community picks unavailable</strong>
+        <span>{error}</span>
+      </div>
+    )
+  }
+  if (!scores.length) {
+    return (
+      <div className="community-locked">
+        <strong>No locked predictions for this match</strong>
+        <span>The first submitted pick will appear here after kickoff.</span>
+      </div>
+    )
+  }
+
+  const total = scores.reduce((sum, score) => sum + score.picks, 0)
+  const outcomes = scores.reduce(
+    (summary, score) => {
+      const key =
+        score.predicted_home > score.predicted_away
+          ? 'home'
+          : score.predicted_home < score.predicted_away
+            ? 'away'
+            : 'draw'
+      summary[key] += score.picks
+      return summary
+    },
+    { home: 0, draw: 0, away: 0 },
+  )
+  const popularScores = [...scores]
+    .sort(
+      (left, right) =>
+        right.picks - left.picks
+        || left.predicted_home - right.predicted_home
+        || left.predicted_away - right.predicted_away,
+    )
+    .slice(0, 3)
+  const percentage = (value) => Math.round((value / total) * 100)
+
+  return (
+    <div className="community-predictions">
+      <section className="community-summary">
+        <header>
+          <div>
+            <span>Community verdict</span>
+            <strong>{total} locked {total === 1 ? 'pick' : 'picks'}</strong>
+          </div>
+          <small>Visible only after kickoff</small>
+        </header>
+        <div className="community-outcomes">
+          {[
+            ['home', TEAMS[fixture.homeId].name],
+            ['draw', 'Draw'],
+            ['away', TEAMS[fixture.awayId].name],
+          ].map(([key, label]) => (
+            <div key={key}>
+              <strong>{percentage(outcomes[key])}%</strong>
+              <span>{label}</span>
+              <i style={{ width: `${percentage(outcomes[key])}%` }} />
+            </div>
+          ))}
+        </div>
+        <div className="popular-scorelines">
+          <span>Popular scorelines</span>
+          {popularScores.map((score) => (
+            <strong key={`${score.predicted_home}-${score.predicted_away}`}>
+              {score.predicted_home}-{score.predicted_away}
+              <small>{score.picks}</small>
+            </strong>
+          ))}
+        </div>
+      </section>
+
+      <section className="community-pick-list">
+        <header>
+          <strong>Prediction sheets</strong>
+          <span>Up to 50 players</span>
+        </header>
+        {rows.map((row) => (
+          <article
+            className={row.user_id === currentUserId ? 'current-user' : ''}
+            key={row.user_id}
+          >
+            <div className="community-avatar">
+              {row.nickname.slice(0, 1).toUpperCase()}
+            </div>
+            <div>
+              <strong>
+                {row.nickname}
+                {row.user_id === currentUserId ? ' (You)' : ''}
+              </strong>
+              <span>
+                {row.favorite_team_name
+                  ? `Supports ${row.favorite_team_name}`
+                  : 'Neutral supporter'}
+              </span>
+            </div>
+            <b>{row.predicted_home} : {row.predicted_away}</b>
+            <small className={row.result_grade ?? 'pending'}>
+              {predictionGrade(row)}
+            </small>
+          </article>
+        ))}
+      </section>
+    </div>
+  )
+}
+
+export function MatchDetailsDialog({
+  currentUserId,
+  fixture,
+  match,
+  onClose,
+}) {
   const [activeTab, setActiveTab] = useState('overview')
   const [details, setDetails] = useState(null)
   const [error, setError] = useState('')
+  const [community, setCommunity] = useState({
+    rows: [],
+    scores: [],
+    loading: false,
+    error: '',
+    loaded: false,
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -140,6 +301,45 @@ export function MatchDetailsDialog({ fixture, match, onClose }) {
       window.removeEventListener('keydown', closeOnEscape)
     }
   }, [match, onClose])
+
+  useEffect(() => {
+    if (activeTab !== 'community' || community.loaded) return
+    let cancelled = false
+
+    async function loadCommunity() {
+      setCommunity((current) => ({
+        ...current,
+        loading: true,
+        error: '',
+      }))
+      const [rowsResult, scoresResult] = await Promise.all([
+        supabase
+          .from('community_match_predictions')
+          .select('*')
+          .eq('match_id', match.id)
+          .order('submitted_at', { ascending: true })
+          .limit(50),
+        supabase
+          .from('community_prediction_scores')
+          .select('*')
+          .eq('match_id', match.id),
+      ])
+      if (cancelled) return
+      const requestError = rowsResult.error ?? scoresResult.error
+      setCommunity({
+        rows: rowsResult.data ?? [],
+        scores: scoresResult.data ?? [],
+        loading: false,
+        error: requestError?.message ?? '',
+        loaded: !requestError,
+      })
+    }
+
+    loadCommunity()
+    return () => {
+      cancelled = true
+    }
+  }, [activeTab, community.loaded, match.id])
 
   const homeName = details?.home.name ?? TEAMS[fixture.homeId].name
   const awayName = details?.away.name ?? TEAMS[fixture.awayId].name
@@ -279,6 +479,18 @@ export function MatchDetailsDialog({ fixture, match, onClose }) {
               <TeamLineup team={details.home} />
               <TeamLineup team={details.away} />
             </div>
+          ) : null}
+
+          {activeTab === 'community' ? (
+            <CommunityPredictions
+              currentUserId={currentUserId}
+              error={community.error}
+              fixture={fixture}
+              loading={community.loading}
+              match={match}
+              rows={community.rows}
+              scores={community.scores}
+            />
           ) : null}
         </div>
 

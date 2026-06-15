@@ -368,6 +368,7 @@ function App() {
       ) : null}
       {selectedFixture?.match ? (
         <MatchDetailsDialog
+          currentUserId={backend.user?.id}
           fixture={selectedFixture}
           match={selectedFixture.match}
           onClose={() => setSelectedFixture(null)}
