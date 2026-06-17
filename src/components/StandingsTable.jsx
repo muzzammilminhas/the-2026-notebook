@@ -1,3 +1,5 @@
+import { TeamName } from './TeamName'
+
 export function StandingsTable({ rows, showMovement = false, compact = false }) {
   return (
     <div className={`table-wrap standings-table ${compact ? 'compact' : ''}`}>
@@ -28,7 +30,9 @@ export function StandingsTable({ rows, showMovement = false, compact = false }) 
                 <span className="position">{row.position}</span>
               </td>
               <td>
-                <strong>{row.name}</strong>
+                <strong>
+                  <TeamName flagCode={row.flagCode} name={row.name} />
+                </strong>
                 <small>
                   {row.won}W {row.drawn}D {row.lost}L
                 </small>

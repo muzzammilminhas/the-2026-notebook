@@ -1,5 +1,6 @@
 import { FIXTURES, GROUPS, TEAMS } from '../data/tournament'
 import { compareGroup, isScoreComplete } from '../lib/tournamentEngine'
+import { TeamName } from './TeamName'
 
 function ScoreInput({ value, label, onChange, disabled }) {
   function apply(rawValue) {
@@ -168,7 +169,7 @@ export function GroupLab({
                   <div className="match-row">
                     <span className="matchday">M{match?.match_number ?? '?'}</span>
                     <strong className="home-team">
-                      {TEAMS[fixture.homeId].name}
+                      <TeamName align="end" team={TEAMS[fixture.homeId]} />
                     </strong>
                     {editable ? (
                       <ScoreInput
@@ -200,7 +201,7 @@ export function GroupLab({
                       />
                     )}
                     <strong className="away-team">
-                      {TEAMS[fixture.awayId].name}
+                      <TeamName team={TEAMS[fixture.awayId]} />
                     </strong>
                     <span className={`match-status ${status.className}`}>
                       {savingMatches[fixture.id] ? 'Saving...' : status.label}
@@ -258,7 +259,9 @@ export function GroupLab({
                   >
                     <td><span className="position">{row.position}</span></td>
                     <td>
-                      <strong>{row.name}</strong>
+                      <strong>
+                        <TeamName flagCode={row.flagCode} name={row.name} />
+                      </strong>
                       <small>
                         {row.won}W {row.drawn}D {row.lost}L
                       </small>
@@ -290,7 +293,9 @@ export function GroupLab({
               key={row.teamId}
             >
               <span>{row.thirdRank}</span>
-              <strong>{row.name}</strong>
+              <strong>
+                <TeamName flagCode={row.flagCode} name={row.name} />
+              </strong>
               <small>
                 G{row.groupId} · {row.points} pts · {row.gd >= 0 ? '+' : ''}
                 {row.gd}

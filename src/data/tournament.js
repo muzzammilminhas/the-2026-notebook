@@ -15,6 +15,57 @@ export const GROUPS = {
 
 export const GROUP_IDS = Object.keys(GROUPS)
 
+const TEAM_FLAG_CODES = {
+  A1: 'mx',
+  A2: 'za',
+  A3: 'kr',
+  A4: 'cz',
+  B1: 'ca',
+  B2: 'ba',
+  B3: 'qa',
+  B4: 'ch',
+  C1: 'br',
+  C2: 'ma',
+  C3: 'ht',
+  C4: 'gb-sct',
+  D1: 'us',
+  D2: 'py',
+  D3: 'au',
+  D4: 'tr',
+  E1: 'de',
+  E2: 'cw',
+  E3: 'ci',
+  E4: 'ec',
+  F1: 'nl',
+  F2: 'jp',
+  F3: 'se',
+  F4: 'tn',
+  G1: 'be',
+  G2: 'eg',
+  G3: 'ir',
+  G4: 'nz',
+  H1: 'es',
+  H2: 'cv',
+  H3: 'sa',
+  H4: 'uy',
+  I1: 'fr',
+  I2: 'sn',
+  I3: 'iq',
+  I4: 'no',
+  J1: 'ar',
+  J2: 'dz',
+  J3: 'at',
+  J4: 'jo',
+  K1: 'pt',
+  K2: 'cd',
+  K3: 'uz',
+  K4: 'co',
+  L1: 'gb-eng',
+  L2: 'hr',
+  L3: 'gh',
+  L4: 'pa',
+}
+
 const PAIRINGS = [
   [0, 1],
   [2, 3],
@@ -28,7 +79,7 @@ export const TEAMS = Object.fromEntries(
   GROUP_IDS.flatMap((groupId) =>
     GROUPS[groupId].map((name, index) => {
       const id = `${groupId}${index + 1}`
-      return [id, { id, name, groupId }]
+      return [id, { id, name, groupId, flagCode: TEAM_FLAG_CODES[id] }]
     }),
   ),
 )

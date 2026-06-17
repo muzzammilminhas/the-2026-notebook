@@ -516,6 +516,35 @@
   text-align: left;
 }
 
+.team-name {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.team-name-end {
+  justify-content: flex-end;
+}
+
+.team-name-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-flag {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 12px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(31, 55, 79, 0.13);
+}
+
 .versus {
   color: #89908d;
   font-family: Georgia, serif;
@@ -608,6 +637,10 @@ td:nth-child(2) {
 td:nth-child(2) strong,
 td:nth-child(2) small {
   display: block;
+}
+
+td:nth-child(2) .team-name {
+  display: flex;
 }
 
 td:nth-child(2) small {
@@ -705,6 +738,16 @@ td:nth-child(2) small {
   font-size: 9px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.third-team .team-name {
+  display: flex;
+  gap: 4px;
+}
+
+.third-team .team-flag {
+  width: 14px;
+  height: 10px;
 }
 
 .third-team small {
@@ -2008,6 +2051,7 @@ td:nth-child(2) small {
 
 .fixture-matchup > strong {
   font-size: 12px;
+  min-width: 0;
 }
 
 .fixture-state {

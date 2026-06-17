@@ -1,5 +1,6 @@
 import { GROUPS, GROUP_IDS } from '../data/tournament'
 import { StandingsTable } from './StandingsTable'
+import { TeamName } from './TeamName'
 
 export function TournamentStandings({ tournament }) {
   return (
@@ -53,7 +54,9 @@ export function TournamentStandings({ tournament }) {
               key={row.teamId}
             >
               <span>{row.thirdRank}</span>
-              <strong>{row.name}</strong>
+              <strong>
+                <TeamName flagCode={row.flagCode} name={row.name} />
+              </strong>
               <small>
                 G{row.groupId} - {row.points} pts - {row.gd >= 0 ? '+' : ''}
                 {row.gd}

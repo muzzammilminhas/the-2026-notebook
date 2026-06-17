@@ -21,6 +21,7 @@ function emptyRow(teamId) {
   return {
     teamId,
     name: TEAMS[teamId].name,
+    flagCode: TEAMS[teamId].flagCode,
     groupId: TEAMS[teamId].groupId,
     played: 0,
     won: 0,

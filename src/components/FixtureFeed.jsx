@@ -1,6 +1,7 @@
 import { TEAMS } from '../data/tournament'
 import { groupFixturesByDate } from '../lib/fixtureSchedule'
 import { isScoreComplete } from '../lib/tournamentEngine'
+import { TeamName } from './TeamName'
 
 function ScoreInput({ value, label, onChange, disabled }) {
   function apply(rawValue) {
@@ -177,7 +178,7 @@ export function FixtureFeed({
 
                   <div className="fixture-matchup">
                     <strong className="home-team">
-                      {TEAMS[fixture.homeId].name}
+                      <TeamName align="end" team={TEAMS[fixture.homeId]} />
                     </strong>
                     {editable ? (
                       <ScoreInput
@@ -211,7 +212,7 @@ export function FixtureFeed({
                       />
                     )}
                     <strong className="away-team">
-                      {TEAMS[fixture.awayId].name}
+                      <TeamName team={TEAMS[fixture.awayId]} />
                     </strong>
                   </div>
 
