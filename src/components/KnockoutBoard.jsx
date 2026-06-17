@@ -1,6 +1,8 @@
 import { TEAMS } from '../data/tournament'
+import { TeamName } from './TeamName'
 
 function TeamSlot({ teamId, winnerId, onPick, disabled }) {
+  const team = teamId ? TEAMS[teamId] : null
   const isWinner = teamId && winnerId === teamId
   const isEliminated = teamId && winnerId && winnerId !== teamId
 
@@ -13,7 +15,11 @@ function TeamSlot({ teamId, winnerId, onPick, disabled }) {
       onClick={() => onPick(teamId)}
       type="button"
     >
-      <span>{teamId ? TEAMS[teamId].name : 'To be decided'}</span>
+      {team ? (
+        <TeamName team={team} />
+      ) : (
+        <span className="team-slot-placeholder">To be decided</span>
+      )}
       {isWinner ? <strong>✓</strong> : null}
     </button>
   )
@@ -71,10 +77,13 @@ export function KnockoutBoard({
         <div className={`champion-box ${champion ? 'decided' : ''}`}>
           <span>{isWhatIf ? 'My champion' : 'World champion'}</span>
           <strong>
-            {champion?.name ??
-              (tournament.isGroupStageComplete
-                ? 'Still unwritten'
-                : 'After the groups')}
+            {champion ? (
+              <TeamName team={champion} />
+            ) : tournament.isGroupStageComplete ? (
+              'Still unwritten'
+            ) : (
+              'After the groups'
+            )}
           </strong>
         </div>
       </section>

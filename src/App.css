@@ -845,6 +845,26 @@ td:nth-child(2) small {
   font-size: 17px;
 }
 
+.champion-box .team-name {
+  justify-content: center;
+  gap: 7px;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.champion-box .team-name-text {
+  font-size: 17px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.champion-box .team-flag {
+  width: 20px;
+  height: 15px;
+}
+
 .champion-box.decided::after {
   content: "★";
   position: absolute;
@@ -1010,6 +1030,17 @@ td:nth-child(2) small {
   cursor: pointer;
 }
 
+.team-slot .team-name,
+.team-slot-placeholder {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.team-slot .team-flag {
+  width: 15px;
+  height: 11px;
+}
+
 .team-slot:first-of-type {
   border-top: 0;
 }
@@ -1030,7 +1061,8 @@ td:nth-child(2) small {
   font-weight: 800;
 }
 
-.team-slot.eliminated span {
+.team-slot.eliminated .team-name-text,
+.team-slot.eliminated .team-slot-placeholder {
   color: #8e908b;
   text-decoration: line-through;
   text-decoration-color: var(--red);
