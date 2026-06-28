@@ -102,7 +102,9 @@ function predictionResult(prediction) {
 }
 
 function TeamLabel({ teamId, align }) {
-  if (!teamId) return <span className="team-slot-placeholder">To be decided</span>
+  if (!teamId) {
+    return <span className="team-slot-placeholder">To be decided</span>
+  }
   return <TeamName align={align} team={TEAMS[teamId]} />
 }
 
@@ -160,9 +162,8 @@ export function KnockoutFixtureFeed({
               const shownScore = editable ? prediction : official
               const resultLabel = predictionResult(prediction)
               const needsPenaltyWinner =
-                editable &&
-                isScoreComplete(prediction) &&
-                prediction.home === prediction.away
+                editable && isScoreComplete(prediction) && prediction.home === prediction.away
+              const predictionComplete = isScoreComplete(prediction)
               const openDetails = (event) => {
                 if (
                   event?.target?.closest?.(
@@ -178,7 +179,9 @@ export function KnockoutFixtureFeed({
                 <article
                   className={`fixture-card knockout-fixture-card ${
                     isScoreComplete(shownScore) ? 'complete' : ''
-                  } ${locked ? 'locked' : ''}`}
+                  } ${locked ? 'locked' : ''} ${
+                    needsPenaltyWinner ? 'needs-penalty-winner' : ''
+                  }`}
                   key={fixture.id}
                   onClick={openDetails}
                 >
@@ -225,6 +228,29 @@ export function KnockoutFixtureFeed({
                     </strong>
                   </div>
 
+                  {needsPenaltyWinner ? (
+                    <div className="penalty-winner-picker">
+                      <span>Advances on penalties</span>
+                      <div>
+                        {[fixture.homeId, fixture.awayId].map((teamId) => (
+                          <button
+                            className={
+                              prediction.teamId === teamId ? 'active' : ''
+                            }
+                            key={teamId}
+                            onClick={() => onWinnerChange(fixture, teamId)}
+                            type="button"
+                          >
+                            <TeamName team={TEAMS[teamId]} />
+                          </button>
+                        ))}
+                      </div>
+                      {predictionComplete && !prediction.teamId ? (
+                        <small>Select who goes through.</small>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   <div className="fixture-state">
                     <span className={`match-status ${status.className}`}>
                       {status.label}
@@ -236,23 +262,6 @@ export function KnockoutFixtureFeed({
                           {resultLabel ?? 'Awaiting verified result'}
                         </strong>
                       </small>
-                    ) : null}
-                    {needsPenaltyWinner ? (
-                      <div className="penalty-winner-picker">
-                        <span>Advances on pens</span>
-                        {[fixture.homeId, fixture.awayId].map((teamId) => (
-                          <button
-                            className={
-                              prediction.teamId === teamId ? 'active' : ''
-                            }
-                            key={teamId}
-                            onClick={() => onWinnerChange(fixture, teamId)}
-                            type="button"
-                          >
-                            {TEAMS[teamId].abbreviation ?? TEAMS[teamId].name}
-                          </button>
-                        ))}
-                      </div>
                     ) : null}
                     <button
                       aria-label={`Open match ${fixture.id} community predictions`}

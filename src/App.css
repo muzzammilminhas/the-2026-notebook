@@ -2131,6 +2131,34 @@ td:nth-child(2) small {
   color: var(--red);
 }
 
+.knockout-fixture-card {
+  min-height: 86px;
+  grid-template-columns: 86px minmax(520px, 1fr) minmax(170px, auto);
+  gap: 18px;
+  padding: 12px 8px;
+}
+
+.knockout-fixture-card.needs-penalty-winner {
+  grid-template-columns: 86px minmax(430px, 1fr) minmax(250px, 0.45fr) minmax(120px, auto);
+}
+
+.knockout-fixture-card .fixture-matchup {
+  grid-template-columns: minmax(150px, 1fr) 68px 14px 68px minmax(150px, 1fr);
+  gap: 12px;
+}
+
+.knockout-fixture-card .fixture-matchup > strong {
+  font-size: 13px;
+}
+
+.knockout-fixture-card .score-control {
+  justify-content: center;
+}
+
+.knockout-fixture-card .fixture-state {
+  min-width: 118px;
+}
+
 .fixture-empty {
   min-height: 240px;
   display: grid;
@@ -2943,36 +2971,63 @@ td:nth-child(2) small {
 }
 
 .penalty-winner-picker {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 5px;
-  font-size: 8px;
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  justify-items: stretch;
+  gap: 7px;
 }
 
 .penalty-winner-picker span {
-  width: 100%;
   color: #7d8581;
+  font-size: 8px;
   font-weight: 800;
-  text-align: right;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
+.penalty-winner-picker > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
 .penalty-winner-picker button {
-  padding: 4px 7px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 5px 8px;
   color: var(--blue);
-  background: rgba(21, 93, 197, 0.08);
+  background: rgba(255, 255, 255, 0.56);
   border: 1px solid rgba(21, 93, 197, 0.2);
   border-radius: 4px;
-  font-size: 8px;
-  font-weight: 850;
   cursor: pointer;
+}
+
+.penalty-winner-picker button .team-name {
+  justify-content: center;
+}
+
+.penalty-winner-picker button .team-name-text {
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .penalty-winner-picker button.active {
   color: white;
   background: var(--blue);
+}
+
+.penalty-winner-picker button.active .team-name-text {
+  color: white;
+}
+
+.penalty-winner-picker small {
+  color: var(--red);
+  font-size: 8px;
+  font-weight: 800;
 }
 
 @media (max-width: 1180px) {
@@ -3292,6 +3347,48 @@ td:nth-child(2) small {
   .fixture-state {
     grid-column: 2;
     justify-items: end;
+  }
+
+  .knockout-fixture-card,
+  .knockout-fixture-card.needs-penalty-winner {
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 8px 10px;
+    padding: 12px 2px;
+  }
+
+  .knockout-fixture-card .fixture-matchup {
+    grid-template-columns: minmax(72px, 1fr) 46px 6px 46px minmax(72px, 1fr);
+    gap: 5px;
+  }
+
+  .knockout-fixture-card .fixture-matchup > strong {
+    font-size: 10px;
+  }
+
+  .knockout-fixture-card .score-control {
+    min-width: 46px;
+  }
+
+  .knockout-fixture-card .score-control button {
+    display: none;
+  }
+
+  .knockout-fixture-card .score-control input {
+    width: 42px;
+    height: 38px;
+  }
+
+  .penalty-winner-picker {
+    grid-column: 2;
+    justify-items: stretch;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(21, 93, 197, 0.14);
+    border-radius: 6px;
+  }
+
+  .penalty-winner-picker button .team-name-text {
+    font-size: 9px;
   }
 
   .scenario-panel {
