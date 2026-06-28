@@ -197,6 +197,7 @@ export function buildKnockout(tournament, picks = {}) {
     ? THIRD_PLACE_ROUTES[qualifyingThirdGroups]
     : null
   const resolvedPicks = {}
+  const resolvedLosers = {}
   const matches = {}
 
   KNOCKOUT_ROUNDS.forEach((round) => {
@@ -209,7 +210,9 @@ export function buildKnockout(tournament, picks = {}) {
                 ? resolveSeed(slot, tournament)
                 : resolveThirdSlot(slot, tournament, thirdRoute),
             )
-          : match.from.map((sourceId) => resolvedPicks[sourceId] ?? null)
+          : match.fromLosers
+            ? match.fromLosers.map((sourceId) => resolvedLosers[sourceId] ?? null)
+            : match.from.map((sourceId) => resolvedPicks[sourceId] ?? null)
       const participantsReady =
         participants.length === 2 &&
         participants.every(Boolean) &&
@@ -222,6 +225,9 @@ export function buildKnockout(tournament, picks = {}) {
         participants.includes(requestedPick)
       ) {
         resolvedPicks[match.id] = requestedPick
+        resolvedLosers[match.id] = participants.find(
+          (participant) => participant !== requestedPick,
+        )
       }
 
       matches[match.id] = {
@@ -239,6 +245,7 @@ export function buildKnockout(tournament, picks = {}) {
       matches: round.matches.map((match) => matches[match.id]),
     })),
     resolvedPicks,
+    resolvedLosers,
     championId: resolvedPicks[104] ?? null,
     thirdRoute,
   }
@@ -252,7 +259,10 @@ export function getDependentMatchIds(matchId) {
     const sourceId = queue.shift()
     KNOCKOUT_ROUNDS.forEach((round) => {
       round.matches.forEach((match) => {
-        if (match.from?.includes(sourceId) && !dependents.includes(match.id)) {
+        if (
+          (match.from?.includes(sourceId) || match.fromLosers?.includes(sourceId)) &&
+          !dependents.includes(match.id)
+        ) {
           dependents.push(match.id)
           queue.push(match.id)
         }

@@ -2,11 +2,10 @@ import { useState } from 'react'
 import { GROUP_IDS, TEAMS } from '../data/tournament'
 
 const SECTIONS = [
-  { id: 'actual', label: 'Actual' },
-  { id: 'whatif', label: 'What If' },
-  { id: 'standings', label: 'Standings' },
   { id: 'knockout', label: 'Knockout' },
   { id: 'leaderboard', label: 'Leaderboard' },
+  { id: 'groups', label: 'Group archive' },
+  { id: 'standings', label: 'Standings' },
 ]
 
 export function AppHeader({

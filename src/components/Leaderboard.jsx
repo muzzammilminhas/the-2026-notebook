@@ -27,13 +27,16 @@ export function Leaderboard({ rows, currentUserId, loading }) {
           <span className="hand-note">Culture table</span>
           <h2>Leaderboard</h2>
           <p>
-            Exact score = 3. Correct outcome = 1. Knockout winner = 2.
+            Group exact = 3. Group outcome = 1. Knockout winner = 2,
+            knockout exact = 4, champion bonus = 5.
           </p>
         </div>
         <div className="score-rules">
           <span><strong>3</strong> exact</span>
           <span><strong>1</strong> outcome</span>
           <span><strong>2</strong> knockout</span>
+          <span><strong>4</strong> KO exact</span>
+          <span><strong>+5</strong> champion</span>
           <span><strong>0</strong> wrong</span>
         </div>
       </section>

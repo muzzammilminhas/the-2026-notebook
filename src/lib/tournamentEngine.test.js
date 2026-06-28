@@ -123,8 +123,39 @@ describe('tournament engine', () => {
   })
 
   it('returns every downstream match that must be cleared after an undo', () => {
-    expect(getDependentMatchIds(73)).toEqual([89, 97, 101, 104])
-    expect(getDependentMatchIds(75)).toEqual([89, 97, 101, 104])
+    expect(getDependentMatchIds(73)).toEqual([89, 97, 101, 103, 104])
+    expect(getDependentMatchIds(75)).toEqual([89, 97, 101, 103, 104])
     expect(getDependentMatchIds(104)).toEqual([])
+  })
+
+  it('builds the third-place match from semifinal losers', () => {
+    const tournament = calculateTournament(completeGroupStage())
+    const picks = {}
+
+    for (let index = 0; index < 4; index += 1) {
+      const bracket = buildKnockout(tournament, picks)
+      bracket.rounds[index].matches.forEach((match) => {
+        if (match.id !== 103 && match.participantsReady) {
+          picks[match.id] = match.participants[0]
+        }
+      })
+    }
+
+    const withSemifinals = buildKnockout(tournament, picks)
+    const semifinal101 = withSemifinals.rounds
+      .flatMap((round) => round.matches)
+      .find((match) => match.id === 101)
+    const semifinal102 = withSemifinals.rounds
+      .flatMap((round) => round.matches)
+      .find((match) => match.id === 102)
+    const thirdPlace = withSemifinals.rounds
+      .flatMap((round) => round.matches)
+      .find((match) => match.id === 103)
+
+    expect(thirdPlace.participants).toEqual([
+      semifinal101.participants[1],
+      semifinal102.participants[1],
+    ])
+    expect(thirdPlace.participantsReady).toBe(true)
   })
 })

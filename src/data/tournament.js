@@ -155,6 +155,11 @@ export const KNOCKOUT_ROUNDS = [
     ],
   },
   {
+    id: 'third',
+    label: 'Third place',
+    matches: [{ id: 103, fromLosers: [101, 102] }],
+  },
+  {
     id: 'final',
     label: 'Final',
     matches: [{ id: 104, from: [101, 102] }],

@@ -177,9 +177,11 @@ export function KnockoutBoard({
                         <span
                           className={`knockout-grade ${prediction.grade}`}
                         >
-                          {prediction.grade === 'correct'
-                            ? 'Correct · +2'
-                            : 'Wrong · +0'}
+                          {prediction.grade === 'exact'
+                            ? `Exact · +${prediction.points}`
+                            : prediction.grade === 'correct'
+                              ? `Correct · +${prediction.points}`
+                              : 'Wrong · +0'}
                         </span>
                       ) : null}
                     </article>
@@ -193,7 +195,7 @@ export function KnockoutBoard({
 
       <p className="bracket-footnote">
         {isWhatIf
-          ? 'Both opponents are required before a pick can advance. Predictions lock at kickoff, and verified winners replace your simulation.'
+          ? 'Scoreline cards are the main entry point. Bracket clicks still save winner-only picks. Predictions lock at kickoff.'
           : 'Scores and winners are supplied by FIFA and cannot be edited here.'}
       </p>
     </div>

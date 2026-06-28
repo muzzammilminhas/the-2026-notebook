@@ -177,6 +177,8 @@ export function useWorldCupBackend() {
           prediction.match_number,
           {
             teamId: prediction.predicted_winner_team_id,
+            home: prediction.predicted_home,
+            away: prediction.predicted_away,
             points: prediction.points,
             grade: prediction.result_grade,
             scoredAt: prediction.scored_at,
@@ -260,7 +262,7 @@ export function useWorldCupBackend() {
   )
 
   const saveKnockoutPrediction = useCallback(
-    async (matchNumber, teamId) => {
+    async (matchNumber, teamId, score = {}) => {
       if (!state.user) throw new Error('Sign in to save knockout picks.')
 
       setState((current) => ({
@@ -269,18 +271,23 @@ export function useWorldCupBackend() {
           ...current.knockoutPredictions,
           [matchNumber]: {
             teamId,
+            home: score.home ?? null,
+            away: score.away ?? null,
             points: null,
             grade: null,
             scoredAt: null,
           },
         },
       }))
+      if (!teamId) return { persisted: false }
 
       const { error } = await supabase.from('knockout_predictions').upsert(
         {
           user_id: state.user.id,
           match_number: Number(matchNumber),
           predicted_winner_team_id: teamId,
+          predicted_home: score.home ?? null,
+          predicted_away: score.away ?? null,
         },
         { onConflict: 'user_id,match_number' },
       )
@@ -288,6 +295,7 @@ export function useWorldCupBackend() {
         await refresh()
         throw error
       }
+      return { persisted: true }
     },
     [refresh, state.user],
   )

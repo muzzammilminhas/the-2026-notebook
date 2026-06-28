@@ -13,6 +13,7 @@ const TABS = [
   ['lineups', 'Lineups'],
   ['community', 'Community'],
 ]
+const COMMUNITY_ONLY_TABS = [['community', 'Community']]
 
 function formatDate(value) {
   if (!value) return 'Schedule pending'
@@ -100,6 +101,7 @@ function TeamLineup({ team }) {
 function predictionGrade(row) {
   if (row.result_grade === 'exact') return `Exact - +${row.points}`
   if (row.result_grade === 'outcome') return `Outcome - +${row.points}`
+  if (row.result_grade === 'correct') return `Correct - +${row.points}`
   if (row.result_grade === 'wrong') return 'Wrong - +0'
   return 'Result pending'
 }
@@ -142,7 +144,7 @@ function CommunityPredictions({
       </div>
     )
   }
-  if (!scores.length) {
+  if (!scores.length && !rows.length) {
     return (
       <div className="community-locked">
         <strong>No locked predictions for this match</strong>
@@ -151,20 +153,33 @@ function CommunityPredictions({
     )
   }
 
-  const total = scores.reduce((sum, score) => sum + score.picks, 0)
-  const outcomes = scores.reduce(
-    (summary, score) => {
-      const key =
-        score.predicted_home > score.predicted_away
-          ? 'home'
-          : score.predicted_home < score.predicted_away
-            ? 'away'
-            : 'draw'
-      summary[key] += score.picks
-      return summary
-    },
-    { home: 0, draw: 0, away: 0 },
-  )
+  const total = scores.length
+    ? scores.reduce((sum, score) => sum + score.picks, 0)
+    : rows.length
+  const outcomes = scores.length
+    ? scores.reduce(
+        (summary, score) => {
+          const key =
+            score.predicted_home > score.predicted_away
+              ? 'home'
+              : score.predicted_home < score.predicted_away
+                ? 'away'
+                : 'draw'
+          summary[key] += score.picks
+          return summary
+        },
+        { home: 0, draw: 0, away: 0 },
+      )
+    : rows.reduce(
+        (summary, row) => {
+          if (row.predicted_winner_team_id === fixture.homeId) summary.home += 1
+          else if (row.predicted_winner_team_id === fixture.awayId) {
+            summary.away += 1
+          }
+          return summary
+        },
+        { home: 0, draw: 0, away: 0 },
+      )
   const popularScores = [...scores]
     .sort(
       (left, right) =>
@@ -174,6 +189,8 @@ function CommunityPredictions({
     )
     .slice(0, 3)
   const percentage = (value) => Math.round((value / total) * 100)
+  const homeLabel = fixture.homeId ? TEAMS[fixture.homeId].name : 'Home'
+  const awayLabel = fixture.awayId ? TEAMS[fixture.awayId].name : 'Away'
 
   return (
     <div className="community-predictions">
@@ -187,9 +204,9 @@ function CommunityPredictions({
         </header>
         <div className="community-outcomes">
           {[
-            ['home', TEAMS[fixture.homeId].name],
+            ['home', homeLabel],
             ['draw', 'Draw'],
-            ['away', TEAMS[fixture.awayId].name],
+            ['away', awayLabel],
           ].map(([key, label]) => (
             <div key={key}>
               <strong>{percentage(outcomes[key])}%</strong>
@@ -198,15 +215,17 @@ function CommunityPredictions({
             </div>
           ))}
         </div>
-        <div className="popular-scorelines">
-          <span>Popular scorelines</span>
-          {popularScores.map((score) => (
-            <strong key={`${score.predicted_home}-${score.predicted_away}`}>
-              {score.predicted_home}-{score.predicted_away}
-              <small>{score.picks}</small>
-            </strong>
-          ))}
-        </div>
+        {popularScores.length ? (
+          <div className="popular-scorelines">
+            <span>Popular scorelines</span>
+            {popularScores.map((score) => (
+              <strong key={`${score.predicted_home}-${score.predicted_away}`}>
+                {score.predicted_home}-{score.predicted_away}
+                <small>{score.picks}</small>
+              </strong>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <section className="community-pick-list">
@@ -233,7 +252,11 @@ function CommunityPredictions({
                   : 'Neutral supporter'}
               </span>
             </div>
-            <b>{row.predicted_home} : {row.predicted_away}</b>
+            <b>
+              {row.predicted_home != null && row.predicted_away != null
+                ? `${row.predicted_home} : ${row.predicted_away}`
+                : TEAMS[row.predicted_winner_team_id]?.name ?? 'Winner pick'}
+            </b>
             <small className={row.result_grade ?? 'pending'}>
               {predictionGrade(row)}
             </small>
@@ -250,7 +273,10 @@ export function MatchDetailsDialog({
   match,
   onClose,
 }) {
-  const [activeTab, setActiveTab] = useState('overview')
+  const communityOnly = fixture.stage !== 'group'
+  const [activeTab, setActiveTab] = useState(
+    communityOnly ? 'community' : 'overview',
+  )
   const [details, setDetails] = useState(null)
   const [error, setError] = useState('')
   const [community, setCommunity] = useState({
@@ -312,17 +338,31 @@ export function MatchDetailsDialog({
         loading: true,
         error: '',
       }))
-      const [rowsResult, scoresResult] = await Promise.all([
-        supabase
+      const rowsQuery = communityOnly
+        ? supabase
+          .from('community_knockout_predictions')
+          .select('*')
+          .eq('match_number', match.match_number)
+          .order('submitted_at', { ascending: true })
+          .limit(50)
+        : supabase
           .from('community_match_predictions')
           .select('*')
           .eq('match_id', match.id)
           .order('submitted_at', { ascending: true })
-          .limit(50),
-        supabase
+          .limit(50)
+      const scoresQuery = communityOnly
+        ? supabase
+          .from('community_knockout_prediction_scores')
+          .select('*')
+          .eq('match_number', match.match_number)
+        : supabase
           .from('community_prediction_scores')
           .select('*')
-          .eq('match_id', match.id),
+          .eq('match_id', match.id)
+      const [rowsResult, scoresResult] = await Promise.all([
+        rowsQuery,
+        scoresQuery,
       ])
       if (cancelled) return
       const requestError = rowsResult.error ?? scoresResult.error
@@ -339,10 +379,10 @@ export function MatchDetailsDialog({
     return () => {
       cancelled = true
     }
-  }, [activeTab, community.loaded, match.id])
+  }, [activeTab, community.loaded, communityOnly, match.id, match.match_number])
 
-  const homeName = details?.home.name ?? TEAMS[fixture.homeId].name
-  const awayName = details?.away.name ?? TEAMS[fixture.awayId].name
+  const homeName = details?.home.name ?? TEAMS[fixture.homeId]?.name ?? 'TBD'
+  const awayName = details?.away.name ?? TEAMS[fixture.awayId]?.name ?? 'TBD'
   const homeScore = details?.home.score ?? match.home_score
   const awayScore = details?.away.score ?? match.away_score
   const source = match.source_payload ?? {}
@@ -369,7 +409,10 @@ export function MatchDetailsDialog({
 
         <header className="match-details-hero">
           <div className="match-details-kicker">
-            <span>M{match.match_number} - Group {fixture.groupId}</span>
+            <span>
+              M{match.match_number} -{' '}
+              {fixture.stage === 'group' ? `Group ${fixture.groupId}` : fixture.roundLabel}
+            </span>
             <strong className={match.status === 'live' ? 'live' : ''}>
               {statusLabel(match, details)}
             </strong>
@@ -386,8 +429,11 @@ export function MatchDetailsDialog({
           </p>
         </header>
 
-        <nav aria-label="Match detail sections" className="match-details-tabs">
-          {TABS.map(([id, label]) => (
+        <nav
+          aria-label="Match detail sections"
+          className={`match-details-tabs ${communityOnly ? 'community-only' : ''}`}
+        >
+          {(communityOnly ? COMMUNITY_ONLY_TABS : TABS).map(([id, label]) => (
             <button
               className={activeTab === id ? 'active' : ''}
               disabled={

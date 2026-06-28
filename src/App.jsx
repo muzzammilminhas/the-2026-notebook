@@ -5,6 +5,7 @@ import { AdminStatus } from './components/AdminStatus'
 import { AuthDialog } from './components/AuthDialog'
 import { FixtureFeed } from './components/FixtureFeed'
 import { FixtureFilters } from './components/FixtureFilters'
+import { KnockoutFixtureFeed } from './components/KnockoutFixtureFeed'
 import { KnockoutBoard } from './components/KnockoutBoard'
 import { Leaderboard } from './components/Leaderboard'
 import { MatchDetailsDialog } from './components/MatchDetailsDialog'
@@ -16,6 +17,7 @@ import {
 } from './hooks/useWorldCupBackend'
 import {
   buildFixtureSchedule,
+  fixtureDateKey,
   filterFixtureSchedule,
 } from './lib/fixtureSchedule'
 import {
@@ -29,10 +31,15 @@ function App() {
   const backend = useWorldCupBackend()
   const [section, setSection] = useState(() => {
     const hash = window.location.hash.replace('#', '')
-    return ['actual', 'whatif', 'standings', 'knockout', 'leaderboard', 'admin']
+    if (['actual', 'whatif'].includes(hash)) return 'groups'
+    return ['knockout', 'leaderboard', 'groups', 'standings', 'admin']
       .includes(hash)
       ? hash
-      : 'actual'
+      : 'knockout'
+  })
+  const [groupArchiveMode, setGroupArchiveMode] = useState(() => {
+    const hash = window.location.hash.replace('#', '')
+    return hash === 'whatif' ? 'whatif' : 'actual'
   })
   const [knockoutMode, setKnockoutMode] = useState('official')
   const [scenarioGroup, setScenarioGroup] = useState('A')
@@ -92,6 +99,37 @@ function App() {
   const fixtureDates = useMemo(
     () => [...new Set(fixtureSchedule.map((fixture) => fixture.dateKey))],
     [fixtureSchedule],
+  )
+  const activeKnockout =
+    knockoutMode === 'whatif' ? scenarioKnockout : officialKnockout
+  const knockoutFixtures = useMemo(
+    () =>
+      activeKnockout.rounds
+        .flatMap((round) =>
+          round.matches.map((match) => {
+            const officialMatch = backend.matchByNumber[match.id]
+            return {
+              id: match.id,
+              stage: officialMatch?.stage ?? round.id,
+              roundLabel: round.label,
+              match: officialMatch,
+              homeId: match.participants[0],
+              awayId: match.participants[1],
+              participantsReady: match.participantsReady,
+              dateKey: fixtureDateKey(officialMatch?.kickoff_at),
+            }
+          }),
+        )
+        .sort((left, right) => {
+          const leftTime = left.match?.kickoff_at
+            ? new Date(left.match.kickoff_at).getTime()
+            : Number.POSITIVE_INFINITY
+          const rightTime = right.match?.kickoff_at
+            ? new Date(right.match.kickoff_at).getTime()
+            : Number.POSITIVE_INFINITY
+          return leftTime - rightTime || left.id - right.id
+        }),
+    [activeKnockout, backend.matchByNumber],
   )
 
   function showNotice(message) {
@@ -186,6 +224,58 @@ function App() {
     }
   }
 
+  async function updateKnockoutScore(fixture, side, value) {
+    if (knockoutMode !== 'whatif') return
+    if (!backend.user) {
+      setAuthOpen(true)
+      return
+    }
+    if (!fixture.participantsReady) {
+      showNotice('Both teams must be known before you can predict this match.')
+      return
+    }
+    const match = backend.matchByNumber[fixture.id]
+    const locked =
+      !match ||
+      match.status !== 'scheduled' ||
+      (match.kickoff_at && new Date(match.kickoff_at) <= new Date())
+    if (locked) {
+      showNotice('Prediction locked: this match has started.')
+      return
+    }
+
+    const current = backend.knockoutPredictions[fixture.id] ?? {}
+    const nextScore = { ...current, [side]: value }
+    const complete =
+      Number.isInteger(nextScore.home) && Number.isInteger(nextScore.away)
+    const winnerId = complete
+      ? nextScore.home > nextScore.away
+        ? fixture.homeId
+        : nextScore.away > nextScore.home
+          ? fixture.awayId
+          : null
+      : null
+
+    if (complete && !winnerId) {
+      await backend.saveKnockoutPrediction(fixture.id, null, nextScore)
+      showNotice('Knockout predictions need a winner, not a draw.')
+      return
+    }
+
+    const dependentMatchIds = getDependentMatchIds(fixture.id)
+    try {
+      if (winnerId) await backend.clearKnockoutPredictions(dependentMatchIds)
+      const result = await backend.saveKnockoutPrediction(
+        fixture.id,
+        winnerId,
+        nextScore,
+      )
+      if (result.persisted) showNotice('Knockout score saved')
+    } catch (error) {
+      showNotice(error.message || 'Knockout score could not be saved.')
+    }
+  }
+
   async function resetKnockoutPicks() {
     const resettableIds = Object.entries(backend.knockoutPredictions)
       .filter(([, prediction]) => !prediction.scoredAt)
@@ -252,52 +342,63 @@ function App() {
             </span>
           </div>
 
-          {section === 'actual' || section === 'whatif' ? (
-            <div className={`fixture-page ${section}`}>
+          {section === 'groups' ? (
+            <div className={`fixture-page ${groupArchiveMode}`}>
               <section className="page-heading fixture-page-heading">
                 <div>
-                  <span className="hand-note">
-                    {section === 'actual'
-                      ? 'The official match notebook'
-                      : 'Your prediction notebook'}
-                  </span>
+                  <span className="hand-note">Archived group stage</span>
                   <h2>
-                    {section === 'actual'
+                    {groupArchiveMode === 'actual'
                       ? 'Fixtures & results'
                       : 'What If fixtures'}
                   </h2>
                   <p>
-                    {section === 'actual'
-                      ? 'A read-only chronological feed. Verified results arrive automatically.'
-                      : 'Predict future scores in chronological order. Real results replace predictions after kickoff.'}
+                    The group stage is finished, but the full notebook stays
+                    here for anyone who wants to revisit results and old picks.
                   </p>
+                </div>
+                <div className="knockout-mode-switch archived-mode-switch">
+                  <button
+                    className={groupArchiveMode === 'actual' ? 'active' : ''}
+                    onClick={() => setGroupArchiveMode('actual')}
+                    type="button"
+                  >
+                    Official archive
+                  </button>
+                  <button
+                    className={groupArchiveMode === 'whatif' ? 'active' : ''}
+                    onClick={() => setGroupArchiveMode('whatif')}
+                    type="button"
+                  >
+                    My old picks
+                  </button>
                 </div>
               </section>
 
               <FixtureFilters
-                dates={fixtureDates}
-                filters={fixtureFilters}
+                  dates={fixtureDates}
+                  filters={fixtureFilters}
                 onChange={setFixtureFilters}
                 totalCount={fixtureSchedule.length}
-                visibleCount={filteredFixtures.length}
-              />
+                  visibleCount={filteredFixtures.length}
+                />
 
               <div
                 className={`fixture-page-layout ${
-                  section === 'whatif' ? 'with-scenario' : ''
+                  groupArchiveMode === 'whatif' ? 'with-scenario' : ''
                 }`}
               >
                 <FixtureFeed
                   actualScores={backend.actualScores}
                   fixtures={filteredFixtures}
-                  mode={section}
+                  mode={groupArchiveMode}
                   onOpenDetails={setSelectedFixture}
                   onScoreChange={updatePrediction}
                   predictions={backend.predictions}
                   savingMatches={backend.savingMatches}
                 />
 
-                {section === 'whatif' ? (
+                {groupArchiveMode === 'whatif' ? (
                   <ScenarioStandingsPanel
                     actualTournament={actualTournament}
                     impacts={impacts}
@@ -317,6 +418,18 @@ function App() {
 
           {section === 'knockout' ? (
             <div className="knockout-page">
+              <section className="page-heading fixture-page-heading">
+                <div>
+                  <span className="hand-note">Knockout stage</span>
+                  <h2>Knockout matches</h2>
+                  <p>
+                    Predict winners with scorelines. Correct winner is worth 2,
+                    exact score is worth 4, and the champion gets a 5 point
+                    bonus.
+                  </p>
+                </div>
+              </section>
+
               <div className="knockout-mode-switch" aria-label="Knockout mode">
                 <button
                   className={knockoutMode === 'official' ? 'active' : ''}
@@ -334,13 +447,21 @@ function App() {
                 </button>
               </div>
 
+              <KnockoutFixtureFeed
+                fixtures={knockoutFixtures}
+                mode={knockoutMode}
+                onOpenDetails={setSelectedFixture}
+                onScoreChange={updateKnockoutScore}
+                predictions={
+                  knockoutMode === 'whatif'
+                    ? backend.knockoutPredictions
+                    : {}
+                }
+              />
+
               <KnockoutBoard
                 isWhatIf={knockoutMode === 'whatif'}
-                knockout={
-                  knockoutMode === 'whatif'
-                    ? scenarioKnockout
-                    : officialKnockout
-                }
+                knockout={activeKnockout}
                 matchByNumber={backend.matchByNumber}
                 onPickWinner={pickWinner}
                 onReset={resetKnockoutPicks}
