@@ -2975,13 +2975,20 @@ td:nth-child(2) small {
   display: grid;
   align-content: center;
   justify-items: stretch;
-  gap: 7px;
+  gap: 8px;
+  padding: 10px;
+  background:
+    linear-gradient(135deg, rgba(24, 87, 196, 0.08), rgba(39, 135, 103, 0.08)),
+    rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(24, 87, 196, 0.18);
+  border-radius: 7px;
+  box-shadow: 0 8px 18px rgba(20, 35, 59, 0.07);
 }
 
 .penalty-winner-picker span {
-  color: #7d8581;
-  font-size: 8px;
-  font-weight: 800;
+  color: var(--navy);
+  font-size: 9px;
+  font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -2994,13 +3001,25 @@ td:nth-child(2) small {
 
 .penalty-winner-picker button {
   min-width: 0;
-  min-height: 32px;
-  padding: 5px 8px;
-  color: var(--blue);
-  background: rgba(255, 255, 255, 0.56);
-  border: 1px solid rgba(21, 93, 197, 0.2);
-  border-radius: 4px;
+  min-height: 38px;
+  padding: 7px 10px;
+  color: var(--navy);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(20, 35, 59, 0.18);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(20, 35, 59, 0.06);
   cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.penalty-winner-picker button:not(.active):hover {
+  border-color: rgba(24, 87, 196, 0.45);
+  box-shadow: 0 5px 14px rgba(24, 87, 196, 0.13);
+  transform: translateY(-1px);
 }
 
 .penalty-winner-picker button .team-name {
@@ -3009,15 +3028,19 @@ td:nth-child(2) small {
 
 .penalty-winner-picker button .team-name-text {
   overflow: hidden;
-  font-size: 10px;
-  font-weight: 850;
+  color: var(--navy);
+  font-size: 11px;
+  font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .penalty-winner-picker button.active {
   color: white;
-  background: var(--blue);
+  background:
+    linear-gradient(135deg, var(--ink), #278767);
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(24, 87, 196, 0.24);
 }
 
 .penalty-winner-picker button.active .team-name-text {
