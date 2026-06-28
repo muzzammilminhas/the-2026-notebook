@@ -70,7 +70,7 @@ export function KnockoutBoard({
           <p>
             {isWhatIf
               ? tournament.isGroupStageComplete
-                ? 'Pick who advances. Click your selected winner again to undo it.'
+                ? 'This updates from your saved knockout score predictions in the match notebook.'
                 : `Complete the group notebook first. ${tournament.completeMatches}/72 results are filled.`
               : 'This bracket is read-only and advances from verified FIFA results.'}
           </p>
@@ -106,7 +106,7 @@ export function KnockoutBoard({
         <small>
           Annex C pairing is calculated only from a complete group table.
         </small>
-        {isWhatIf ? (
+        {isWhatIf && allowDirectPicks ? (
           <button
             className="reset-bracket-button"
             disabled={!Object.values(predictions).some(
