@@ -32,7 +32,7 @@ function App() {
   const [section, setSection] = useState(() => {
     const hash = window.location.hash.replace('#', '')
     if (['actual', 'whatif'].includes(hash)) return 'groups'
-    return ['knockout', 'leaderboard', 'groups', 'standings', 'admin']
+    return ['knockout', 'bracket', 'leaderboard', 'groups', 'standings', 'admin']
       .includes(hash)
       ? hash
       : 'knockout'
@@ -466,42 +466,10 @@ function App() {
                 </button>
               </div>
 
-              <section className="knockout-bracket-section">
-                <div className="section-title compact">
-                  <div>
-                    <span className="section-number">01</span>
-                    <h3>
-                      {knockoutMode === 'whatif'
-                        ? 'Simulation bracket'
-                        : 'Actual bracket'}
-                    </h3>
-                  </div>
-                  <p>Includes the third-place route from semifinal losers.</p>
-                </div>
-
-                <KnockoutBoard
-                  isWhatIf={knockoutMode === 'whatif'}
-                  knockout={activeKnockout}
-                  matchByNumber={backend.matchByNumber}
-                  onPickWinner={pickWinner}
-                  onReset={resetKnockoutPicks}
-                  predictions={
-                    knockoutMode === 'whatif'
-                      ? backend.knockoutPredictions
-                      : {}
-                  }
-                  tournament={
-                    knockoutMode === 'whatif'
-                      ? scenarioTournament
-                      : actualTournament
-                  }
-                />
-              </section>
-
               <section className="knockout-feed-section">
                 <div className="section-title compact">
                   <div>
-                    <span className="section-number">02</span>
+                    <span className="section-number">01</span>
                     <h3>Match notebook</h3>
                   </div>
                   <p>Completed matches move out of the active list.</p>
@@ -540,6 +508,58 @@ function App() {
                     : {}
                 }
               />
+              </section>
+            </div>
+          ) : null}
+
+          {section === 'bracket' ? (
+            <div className="knockout-page">
+              <section className="page-heading fixture-page-heading">
+                <div>
+                  <span className="hand-note">Knockout path</span>
+                  <h2>Bracket</h2>
+                  <p>
+                    Actual and simulation brackets live here, including the
+                    third-place match.
+                  </p>
+                </div>
+              </section>
+
+              <div className="knockout-mode-switch" aria-label="Bracket mode">
+                <button
+                  className={knockoutMode === 'official' ? 'active' : ''}
+                  onClick={() => setKnockoutMode('official')}
+                  type="button"
+                >
+                  Actual bracket
+                </button>
+                <button
+                  className={knockoutMode === 'whatif' ? 'active' : ''}
+                  onClick={() => setKnockoutMode('whatif')}
+                  type="button"
+                >
+                  What If bracket
+                </button>
+              </div>
+
+              <section className="knockout-bracket-section">
+                <KnockoutBoard
+                  isWhatIf={knockoutMode === 'whatif'}
+                  knockout={activeKnockout}
+                  matchByNumber={backend.matchByNumber}
+                  onPickWinner={pickWinner}
+                  onReset={resetKnockoutPicks}
+                  predictions={
+                    knockoutMode === 'whatif'
+                      ? backend.knockoutPredictions
+                      : {}
+                  }
+                  tournament={
+                    knockoutMode === 'whatif'
+                      ? scenarioTournament
+                      : actualTournament
+                  }
+                />
               </section>
             </div>
           ) : null}

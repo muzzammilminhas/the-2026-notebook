@@ -3,6 +3,7 @@ import { GROUP_IDS, TEAMS } from '../data/tournament'
 
 const SECTIONS = [
   { id: 'knockout', label: 'Knockout' },
+  { id: 'bracket', label: 'Bracket' },
   { id: 'leaderboard', label: 'Leaderboard' },
   { id: 'groups', label: 'Group archive' },
   { id: 'standings', label: 'Standings' },
