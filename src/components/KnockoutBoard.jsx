@@ -43,6 +43,7 @@ export function KnockoutBoard({
   matchByNumber,
   predictions,
   onReset,
+  allowDirectPicks = false,
 }) {
   const champion = knockout.championId ? TEAMS[knockout.championId] : null
   const qualifiedThirds = tournament.isGroupStageComplete
@@ -141,6 +142,7 @@ export function KnockoutBoard({
                   const prediction = predictions[match.id]
                   const selectionDisabled =
                     !isWhatIf ||
+                    !allowDirectPicks ||
                     locked ||
                     !tournament.isGroupStageComplete ||
                     !match.participantsReady
@@ -195,7 +197,7 @@ export function KnockoutBoard({
 
       <p className="bracket-footnote">
         {isWhatIf
-          ? 'Scoreline cards are the main entry point. Bracket clicks still save winner-only picks. Predictions lock at kickoff.'
+          ? 'This bracket follows your saved knockout score predictions from the match notebook. Predictions lock at kickoff.'
           : 'Scores and winners are supplied by FIFA and cannot be edited here.'}
       </p>
     </div>

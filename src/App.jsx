@@ -520,7 +520,8 @@ function App() {
                   <h2>Bracket</h2>
                   <p>
                     Actual and simulation brackets live here, including the
-                    third-place match.
+                    third-place match. What If follows your score predictions
+                    from the Knockout match notebook.
                   </p>
                 </div>
               </section>
