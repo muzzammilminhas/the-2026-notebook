@@ -111,6 +111,7 @@ export function KnockoutFixtureFeed({
   mode,
   onOpenDetails,
   onScoreChange,
+  onWinnerChange,
   predictions,
 }) {
   const sections = groupFixturesByDate(fixtures)
@@ -158,6 +159,10 @@ export function KnockoutFixtureFeed({
                 fixture.participantsReady
               const shownScore = editable ? prediction : official
               const resultLabel = predictionResult(prediction)
+              const needsPenaltyWinner =
+                editable &&
+                isScoreComplete(prediction) &&
+                prediction.home === prediction.away
               const openDetails = (event) => {
                 if (
                   event?.target?.closest?.(
@@ -231,6 +236,23 @@ export function KnockoutFixtureFeed({
                           {resultLabel ?? 'Awaiting verified result'}
                         </strong>
                       </small>
+                    ) : null}
+                    {needsPenaltyWinner ? (
+                      <div className="penalty-winner-picker">
+                        <span>Advances on pens</span>
+                        {[fixture.homeId, fixture.awayId].map((teamId) => (
+                          <button
+                            className={
+                              prediction.teamId === teamId ? 'active' : ''
+                            }
+                            key={teamId}
+                            onClick={() => onWinnerChange(fixture, teamId)}
+                            type="button"
+                          >
+                            {TEAMS[teamId].abbreviation ?? TEAMS[teamId].name}
+                          </button>
+                        ))}
+                      </div>
                     ) : null}
                     <button
                       aria-label={`Open match ${fixture.id} community predictions`}

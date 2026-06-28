@@ -2942,6 +2942,39 @@ td:nth-child(2) small {
   margin: 12px 0 18px;
 }
 
+.penalty-winner-picker {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-size: 8px;
+}
+
+.penalty-winner-picker span {
+  width: 100%;
+  color: #7d8581;
+  font-weight: 800;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.penalty-winner-picker button {
+  padding: 4px 7px;
+  color: var(--blue);
+  background: rgba(21, 93, 197, 0.08);
+  border: 1px solid rgba(21, 93, 197, 0.2);
+  border-radius: 4px;
+  font-size: 8px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.penalty-winner-picker button.active {
+  color: white;
+  background: var(--blue);
+}
+
 @media (max-width: 1180px) {
   .app-header {
     grid-template-columns: 1fr auto;

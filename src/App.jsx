@@ -272,12 +272,12 @@ function App() {
         ? fixture.homeId
         : nextScore.away > nextScore.home
           ? fixture.awayId
-          : null
+          : current.teamId
       : null
 
     if (complete && !winnerId) {
       await backend.saveKnockoutPrediction(fixture.id, null, nextScore)
-      showNotice('Knockout predictions need a winner, not a draw.')
+      showNotice('Choose who advances on penalties.')
       return
     }
 
@@ -292,6 +292,46 @@ function App() {
       if (result.persisted) showNotice('Knockout score saved')
     } catch (error) {
       showNotice(error.message || 'Knockout score could not be saved.')
+    }
+  }
+
+  async function updateKnockoutWinner(fixture, teamId) {
+    if (knockoutMode !== 'whatif') return
+    if (!backend.user) {
+      setAuthOpen(true)
+      return
+    }
+    const match = backend.matchByNumber[fixture.id]
+    const locked =
+      !match ||
+      match.status !== 'scheduled' ||
+      (match.kickoff_at && new Date(match.kickoff_at) <= new Date())
+    if (locked) {
+      showNotice('Prediction locked: this match has started.')
+      return
+    }
+    const current = backend.knockoutPredictions[fixture.id] ?? {}
+    if (
+      !Number.isInteger(current.home) ||
+      !Number.isInteger(current.away) ||
+      current.home !== current.away
+    ) {
+      showNotice('Penalty winner is only needed for tied score predictions.')
+      return
+    }
+    if (![fixture.homeId, fixture.awayId].includes(teamId)) {
+      showNotice('That team is not in this matchup.')
+      return
+    }
+    try {
+      await backend.clearKnockoutPredictions(getDependentMatchIds(fixture.id))
+      const result = await backend.saveKnockoutPrediction(fixture.id, teamId, {
+        home: current.home,
+        away: current.away,
+      })
+      if (result.persisted) showNotice('Penalty winner saved')
+    } catch (error) {
+      showNotice(error.message || 'Penalty winner could not be saved.')
     }
   }
 
@@ -502,6 +542,7 @@ function App() {
                 mode={knockoutMode}
                 onOpenDetails={setSelectedFixture}
                 onScoreChange={updateKnockoutScore}
+                onWinnerChange={updateKnockoutWinner}
                 predictions={
                   knockoutMode === 'whatif'
                     ? backend.knockoutPredictions
