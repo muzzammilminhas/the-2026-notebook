@@ -42,6 +42,7 @@ function App() {
     return hash === 'whatif' ? 'whatif' : 'actual'
   })
   const [knockoutMode, setKnockoutMode] = useState('official')
+  const [knockoutMatchTab, setKnockoutMatchTab] = useState('upcoming')
   const [scenarioGroup, setScenarioGroup] = useState('A')
   const [fixtureFilters, setFixtureFilters] = useState({
     team: '',
@@ -131,6 +132,24 @@ function App() {
         }),
     [activeKnockout, backend.matchByNumber],
   )
+  const completedKnockoutFixtures = useMemo(
+    () =>
+      knockoutFixtures.filter(
+        (fixture) => fixture.match?.status === 'finished',
+      ),
+    [knockoutFixtures],
+  )
+  const upcomingKnockoutFixtures = useMemo(
+    () =>
+      knockoutFixtures.filter(
+        (fixture) => fixture.match?.status !== 'finished',
+      ),
+    [knockoutFixtures],
+  )
+  const visibleKnockoutFixtures =
+    knockoutMatchTab === 'completed'
+      ? completedKnockoutFixtures
+      : upcomingKnockoutFixtures
 
   function showNotice(message) {
     setNotice(message)
@@ -447,8 +466,71 @@ function App() {
                 </button>
               </div>
 
+              <section className="knockout-bracket-section">
+                <div className="section-title compact">
+                  <div>
+                    <span className="section-number">01</span>
+                    <h3>
+                      {knockoutMode === 'whatif'
+                        ? 'Simulation bracket'
+                        : 'Actual bracket'}
+                    </h3>
+                  </div>
+                  <p>Includes the third-place route from semifinal losers.</p>
+                </div>
+
+                <KnockoutBoard
+                  isWhatIf={knockoutMode === 'whatif'}
+                  knockout={activeKnockout}
+                  matchByNumber={backend.matchByNumber}
+                  onPickWinner={pickWinner}
+                  onReset={resetKnockoutPicks}
+                  predictions={
+                    knockoutMode === 'whatif'
+                      ? backend.knockoutPredictions
+                      : {}
+                  }
+                  tournament={
+                    knockoutMode === 'whatif'
+                      ? scenarioTournament
+                      : actualTournament
+                  }
+                />
+              </section>
+
+              <section className="knockout-feed-section">
+                <div className="section-title compact">
+                  <div>
+                    <span className="section-number">02</span>
+                    <h3>Match notebook</h3>
+                  </div>
+                  <p>Completed matches move out of the active list.</p>
+                </div>
+
+                <div
+                  className="knockout-mode-switch knockout-match-tabs"
+                  aria-label="Knockout match list"
+                >
+                  <button
+                    className={knockoutMatchTab === 'upcoming' ? 'active' : ''}
+                    onClick={() => setKnockoutMatchTab('upcoming')}
+                    type="button"
+                  >
+                    Upcoming ({upcomingKnockoutFixtures.length})
+                  </button>
+                  <button
+                    className={
+                      knockoutMatchTab === 'completed' ? 'active' : ''
+                    }
+                    onClick={() => setKnockoutMatchTab('completed')}
+                    type="button"
+                  >
+                    Completed ({completedKnockoutFixtures.length})
+                  </button>
+                </div>
+
               <KnockoutFixtureFeed
-                fixtures={knockoutFixtures}
+                fixtures={visibleKnockoutFixtures}
                 mode={knockoutMode}
                 onOpenDetails={setSelectedFixture}
                 onScoreChange={updateKnockoutScore}
@@ -458,24 +540,7 @@ function App() {
                     : {}
                 }
               />
-
-              <KnockoutBoard
-                isWhatIf={knockoutMode === 'whatif'}
-                knockout={activeKnockout}
-                matchByNumber={backend.matchByNumber}
-                onPickWinner={pickWinner}
-                onReset={resetKnockoutPicks}
-                predictions={
-                  knockoutMode === 'whatif'
-                    ? backend.knockoutPredictions
-                    : {}
-                }
-                tournament={
-                  knockoutMode === 'whatif'
-                    ? scenarioTournament
-                    : actualTournament
-                }
-              />
+              </section>
             </div>
           ) : null}
 

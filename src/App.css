@@ -2923,6 +2923,25 @@ td:nth-child(2) small {
   background: var(--navy);
 }
 
+.knockout-bracket-section,
+.knockout-feed-section {
+  margin-top: 24px;
+}
+
+.knockout-bracket-section {
+  padding-top: 4px;
+  border-top: 1px solid rgba(33, 65, 91, 0.14);
+}
+
+.knockout-feed-section {
+  padding-top: 18px;
+  border-top: 1px solid rgba(33, 65, 91, 0.14);
+}
+
+.knockout-match-tabs {
+  margin: 12px 0 18px;
+}
+
 @media (max-width: 1180px) {
   .app-header {
     grid-template-columns: 1fr auto;
