@@ -109,3 +109,123 @@ begin
   return new;
 end;
 $$;
+
+create temp table r16_89_90_prediction_repair
+on commit drop
+as
+select
+  p.user_id,
+  case
+    when p.match_number = 89 and p.predicted_winner_team_id not in ('D2', 'I1')
+      then 90
+    when p.match_number = 90 and p.predicted_winner_team_id not in ('B1', 'C2')
+      then 89
+    else p.match_number
+  end as match_number,
+  p.predicted_winner_team_id,
+  p.submitted_at,
+  now() as updated_at,
+  p.predicted_home,
+  p.predicted_away
+from public.knockout_predictions p
+where p.match_number in (89, 90)
+  and exists (
+    select 1
+    from public.knockout_predictions bad
+    where bad.user_id = p.user_id
+      and (
+        (
+          bad.match_number = 89
+          and bad.predicted_winner_team_id not in ('D2', 'I1')
+        )
+        or (
+          bad.match_number = 90
+          and bad.predicted_winner_team_id not in ('B1', 'C2')
+        )
+      )
+  );
+
+alter table public.knockout_predictions disable trigger knockout_predictions_guard_write;
+
+delete from public.knockout_predictions p
+where p.match_number in (89, 90)
+  and exists (
+    select 1
+    from r16_89_90_prediction_repair repair
+    where repair.user_id = p.user_id
+  );
+
+insert into public.knockout_predictions (
+  user_id,
+  match_number,
+  predicted_winner_team_id,
+  points,
+  result_grade,
+  submitted_at,
+  updated_at,
+  scored_at,
+  predicted_home,
+  predicted_away
+)
+select
+  user_id,
+  match_number,
+  predicted_winner_team_id,
+  null,
+  null,
+  submitted_at,
+  now(),
+  null,
+  predicted_home,
+  predicted_away
+from r16_89_90_prediction_repair
+on conflict (user_id, match_number) do update
+set
+  predicted_winner_team_id = excluded.predicted_winner_team_id,
+  points = null,
+  result_grade = null,
+  updated_at = excluded.updated_at,
+  scored_at = null,
+  predicted_home = excluded.predicted_home,
+  predicted_away = excluded.predicted_away;
+
+alter table public.knockout_predictions enable trigger knockout_predictions_guard_write;
+
+update public.knockout_predictions p
+set
+  points = case
+    when p.predicted_winner_team_id <> m.winner_team_id then 0
+    when p.predicted_home = m.home_score
+     and p.predicted_away = m.away_score then 4
+    else 2
+  end,
+  result_grade = case
+    when p.predicted_winner_team_id <> m.winner_team_id then 'wrong'
+    when p.predicted_home = m.home_score
+     and p.predicted_away = m.away_score then 'exact'
+    else 'correct'
+  end,
+  scored_at = now()
+from public.matches m
+where p.match_number = m.match_number
+  and p.match_number in (89, 90)
+  and m.status = 'finished'
+  and m.verified
+  and m.winner_team_id is not null;
+
+do $$
+declare
+  affected_user uuid;
+begin
+  for affected_user in
+    select distinct user_id
+    from public.knockout_predictions
+    where match_number in (89, 90)
+  loop
+    perform private.recalculate_leaderboard(affected_user);
+  end loop;
+end;
+$$;
+
+revoke execute on function public.guard_knockout_prediction_write()
+from public, anon, authenticated;

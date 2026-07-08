@@ -82,8 +82,8 @@ begin
   end if;
 
   prerequisite_matches := case new.match_number
-    when 89 then array[73, 75]
-    when 90 then array[74, 77]
+    when 89 then array[74, 77]
+    when 90 then array[73, 75]
     when 91 then array[76, 78]
     when 92 then array[79, 80]
     when 93 then array[83, 84]

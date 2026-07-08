@@ -83,17 +83,17 @@ describe('tournament engine', () => {
     const pickedTeam = match73.participants[0]
     const secondPass = buildKnockout(tournament, {
       73: pickedTeam,
-      89: pickedTeam,
+      90: pickedTeam,
       97: pickedTeam,
       101: pickedTeam,
       104: pickedTeam,
     })
-    const match89 = secondPass.rounds[1].matches.find((match) => match.id === 89)
+    const match90 = secondPass.rounds[1].matches.find((match) => match.id === 90)
 
-    expect(match89.participants[0]).toBe(pickedTeam)
-    expect(match89.participants[1]).toBeNull()
-    expect(match89.participantsReady).toBe(false)
-    expect(match89.winnerId).toBeNull()
+    expect(match90.participants[0]).toBe(pickedTeam)
+    expect(match90.participants[1]).toBeNull()
+    expect(match90.participantsReady).toBe(false)
+    expect(match90.winnerId).toBeNull()
     expect(secondPass.championId).toBeNull()
   })
 
@@ -108,23 +108,23 @@ describe('tournament engine', () => {
       73: winner73,
       75: winner75,
     })
-    const match89 = withRoundOf32.rounds[1].matches.find(
-      (match) => match.id === 89,
+    const match90 = withRoundOf32.rounds[1].matches.find(
+      (match) => match.id === 90,
     )
     const withRoundOf16 = buildKnockout(tournament, {
       73: winner73,
       75: winner75,
-      89: winner73,
+      90: winner73,
     })
 
-    expect(match89.participants).toEqual([winner73, winner75])
-    expect(match89.participantsReady).toBe(true)
-    expect(withRoundOf16.resolvedPicks[89]).toBe(winner73)
+    expect(match90.participants).toEqual([winner73, winner75])
+    expect(match90.participantsReady).toBe(true)
+    expect(withRoundOf16.resolvedPicks[90]).toBe(winner73)
   })
 
   it('returns every downstream match that must be cleared after an undo', () => {
-    expect(getDependentMatchIds(73)).toEqual([89, 97, 101, 103, 104])
-    expect(getDependentMatchIds(75)).toEqual([89, 97, 101, 103, 104])
+    expect(getDependentMatchIds(73)).toEqual([90, 97, 101, 103, 104])
+    expect(getDependentMatchIds(75)).toEqual([90, 97, 101, 103, 104])
     expect(getDependentMatchIds(104)).toEqual([])
   })
 

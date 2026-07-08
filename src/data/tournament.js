@@ -126,8 +126,8 @@ export const KNOCKOUT_ROUNDS = [
     id: 'r16',
     label: 'Round of 16',
     matches: [
-      { id: 89, from: [73, 75] },
-      { id: 90, from: [74, 77] },
+      { id: 89, from: [74, 77] },
+      { id: 90, from: [73, 75] },
       { id: 91, from: [76, 78] },
       { id: 92, from: [79, 80] },
       { id: 93, from: [83, 84] },

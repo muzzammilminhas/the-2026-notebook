@@ -1,4 +1,4 @@
-const CACHE_NAME = 'the-2026-notebook-v2'
+const CACHE_NAME = 'the-2026-notebook-v4'
 const APP_ROOT = new URL('./', self.registration.scope).pathname
 const APP_SHELL = [
   APP_ROOT,

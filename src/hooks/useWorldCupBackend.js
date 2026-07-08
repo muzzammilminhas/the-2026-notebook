@@ -448,7 +448,7 @@ export function useWorldCupBackend() {
         ['exact', 'outcome'].includes(prediction.grade),
       ).length,
       knockoutCorrect: knockoutScored.filter(
-        (prediction) => prediction.grade === 'correct',
+        (prediction) => ['correct', 'exact'].includes(prediction.grade),
       ).length,
       scored: groupScored.length + knockoutScored.length,
     }

@@ -381,10 +381,12 @@ export function MatchDetailsDialog({
     }
   }, [activeTab, community.loaded, communityOnly, match.id, match.match_number])
 
-  const homeName = details?.home.name ?? TEAMS[fixture.homeId]?.name ?? 'TBD'
-  const awayName = details?.away.name ?? TEAMS[fixture.awayId]?.name ?? 'TBD'
-  const homeScore = details?.home.score ?? match.home_score
-  const awayScore = details?.away.score ?? match.away_score
+  const homeTeamId = fixture.homeId ?? match.home_team_id
+  const awayTeamId = fixture.awayId ?? match.away_team_id
+  const homeName = TEAMS[homeTeamId]?.name ?? details?.home.name ?? 'TBD'
+  const awayName = TEAMS[awayTeamId]?.name ?? details?.away.name ?? 'TBD'
+  const homeScore = match.home_score ?? details?.home.score
+  const awayScore = match.away_score ?? details?.away.score
   const source = match.source_payload ?? {}
   const stadium = details?.stadium ?? source.stadium
   const city = details?.city ?? source.city

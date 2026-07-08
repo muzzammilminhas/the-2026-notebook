@@ -266,7 +266,7 @@ begin
     (
       select count(*)::integer
       from public.knockout_predictions
-      where user_id = target_user and result_grade = 'correct'
+      where user_id = target_user and result_grade in ('correct', 'exact')
     ),
     count(*) filter (where scored_at is not null)::integer
       + (

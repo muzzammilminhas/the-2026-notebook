@@ -109,13 +109,20 @@ function App() {
         .flatMap((round) =>
           round.matches.map((match) => {
             const officialMatch = backend.matchByNumber[match.id]
+            const useOfficialParticipants = knockoutMode === 'official'
             return {
               id: match.id,
               stage: officialMatch?.stage ?? round.id,
               roundLabel: round.label,
               match: officialMatch,
-              homeId: match.participants[0],
-              awayId: match.participants[1],
+              homeId:
+                useOfficialParticipants && officialMatch?.home_team_id
+                  ? officialMatch.home_team_id
+                  : match.participants[0],
+              awayId:
+                useOfficialParticipants && officialMatch?.away_team_id
+                  ? officialMatch.away_team_id
+                  : match.participants[1],
               participantsReady: match.participantsReady,
               dateKey: fixtureDateKey(officialMatch?.kickoff_at),
             }
@@ -130,7 +137,7 @@ function App() {
             : Number.POSITIVE_INFINITY
           return leftTime - rightTime || left.id - right.id
         }),
-    [activeKnockout, backend.matchByNumber],
+    [activeKnockout, backend.matchByNumber, knockoutMode],
   )
   const completedKnockoutFixtures = useMemo(
     () =>

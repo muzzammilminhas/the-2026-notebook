@@ -134,6 +134,17 @@ export function KnockoutBoard({
               <div className="round-matches">
                 {round.matches.map((match) => {
                   const officialMatch = matchByNumber[match.id]
+                  const participants =
+                    !isWhatIf && officialMatch
+                      ? [
+                          officialMatch.home_team_id ?? match.participants[0],
+                          officialMatch.away_team_id ?? match.participants[1],
+                        ]
+                      : match.participants
+                  const winnerId =
+                    !isWhatIf && officialMatch?.winner_team_id
+                      ? officialMatch.winner_team_id
+                      : match.winnerId
                   const locked =
                     !officialMatch ||
                     officialMatch.status !== 'scheduled' ||
@@ -166,14 +177,14 @@ export function KnockoutBoard({
                       <TeamSlot
                         disabled={selectionDisabled}
                         onPick={(teamId) => onPickWinner(match.id, teamId)}
-                        teamId={match.participants[0]}
-                        winnerId={match.winnerId}
+                        teamId={participants[0]}
+                        winnerId={winnerId}
                       />
                       <TeamSlot
                         disabled={selectionDisabled}
                         onPick={(teamId) => onPickWinner(match.id, teamId)}
-                        teamId={match.participants[1]}
-                        winnerId={match.winnerId}
+                        teamId={participants[1]}
+                        winnerId={winnerId}
                       />
                       {isWhatIf && prediction?.scoredAt ? (
                         <span
