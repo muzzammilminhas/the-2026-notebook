@@ -308,7 +308,11 @@ export function KnockoutFixtureFeed({
                       onClick={() => onOpenHighlights(fixture)}
                       type="button"
                     >
-                      {videoStatus === 'ready' ? 'Highlights' : 'Video slot'}
+                      {videoStatus === 'ready'
+                        ? 'Highlights'
+                        : videoStatus === 'coming-soon'
+                          ? 'Coming soon'
+                          : 'After match'}
                     </button>
                   </div>
                 </article>

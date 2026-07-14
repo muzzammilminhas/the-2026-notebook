@@ -4094,7 +4094,7 @@ td:nth-child(2) small {
 }
 
 .award-card small,
-.linkedin-panel p {
+.journey-panel p {
   color: #6f7772;
   font-size: 10px;
   line-height: 1.55;
@@ -4115,7 +4115,7 @@ td:nth-child(2) small {
   font-weight: 760;
 }
 
-.linkedin-panel {
+.journey-panel {
   grid-column: 1 / -1;
 }
 

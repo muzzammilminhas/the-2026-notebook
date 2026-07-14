@@ -45,7 +45,7 @@ function AwardCard({ label, row, metric, emptyText }) {
         </>
       ) : (
         <>
-          <strong>Coming after final</strong>
+          <strong>Awaiting the final</strong>
           <small>{emptyText}</small>
         </>
       )}
@@ -85,11 +85,11 @@ export function TimeCapsule({
     <div className="capsule-view">
       <section className="page-heading capsule-heading">
         <div>
-          <span className="hand-note">Final LinkedIn version</span>
+          <span className="hand-note">Tournament archive</span>
           <h2>World Cup time capsule</h2>
           <p>
-            This is the post-final home for the app: report cards, Hall of
-            Fame, match highlights, and the community prediction story.
+            Revisit the tournament through prediction report cards, the Hall of
+            Fame, match highlights, and community moments.
           </p>
         </div>
       </section>
@@ -122,7 +122,7 @@ export function TimeCapsule({
         </article>
 
         <article className="champion-memory">
-          <span>Champion page</span>
+          <span>Champion memory</span>
           <strong>
             {champion ? <TeamName team={champion} /> : 'Still unwritten'}
           </strong>
@@ -140,19 +140,19 @@ export function TimeCapsule({
           value={`${finishedMatches.length}/${fixtures.length}`}
         />
         <CapsuleMetric
-          label="Highlight slots"
-          note="YouTube embeds ready to fill"
+          label="Highlights"
+          note="official videos as available"
           value={highlightCount}
         />
         <CapsuleMetric
           label="Leaderboard entries"
-          note="Hall of Fame source"
+          note="players on the final table"
           value={leaderboard.length}
         />
         <CapsuleMetric
-          label="Post-final mode"
-          note="ready for final switch"
-          value="Built"
+          label="Final stretch"
+          note="the archive grows every match"
+          value="Live"
         />
       </section>
 
@@ -164,19 +164,19 @@ export function TimeCapsule({
           </header>
           <div className="award-grid">
             <AwardCard
-              emptyText="Top points winner appears here."
+              emptyText="The points leader will be crowned here."
               label="Notebook Champion"
               metric={`${championLeader?.points ?? 0} points`}
               row={championLeader}
             />
             <AwardCard
-              emptyText="Most exact-score player appears here."
+              emptyText="The sharpest score predictor will be crowned here."
               label="Oracle"
               metric={`${exactLeader?.exact_scores ?? 0} exact scores`}
               row={exactLeader}
             />
             <AwardCard
-              emptyText="Best knockout predictor appears here."
+              emptyText="The best knockout predictor will be crowned here."
               label="Knockout King"
               metric={`${knockoutLeader?.correct_knockout ?? 0} knockout hits`}
               row={knockoutLeader}
@@ -187,7 +187,7 @@ export function TimeCapsule({
         <article className="capsule-panel">
           <header>
             <span>Community story</span>
-            <h3>Insights to reveal after the final</h3>
+            <h3>Moments to revisit after the final</h3>
           </header>
           <div className="story-list">
             <span>Most predicted champion</span>
@@ -197,15 +197,15 @@ export function TimeCapsule({
           </div>
         </article>
 
-        <article className="capsule-panel linkedin-panel">
+        <article className="capsule-panel journey-panel">
           <header>
-            <span>LinkedIn angle</span>
-            <h3>From notebook to tournament archive</h3>
+            <span>Tournament journey</span>
+            <h3>From first pick to final whistle</h3>
           </header>
           <p>
-            Started as a prediction notebook. Ended as a live tournament
-            experience with scoring, brackets, report cards, highlights, and a
-            final community time capsule.
+            Follow the full path from group-stage picks to knockout pressure,
+            final rankings, archived highlights, and the memories that shaped
+            the tournament.
           </p>
         </article>
       </section>

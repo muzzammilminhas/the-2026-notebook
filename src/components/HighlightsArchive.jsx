@@ -74,7 +74,11 @@ function HighlightCard({ fixture, onOpenHighlights }) {
               : 'Match not finished'}
         </span>
         <button onClick={() => onOpenHighlights(fixture)} type="button">
-          {status === 'ready' ? 'Watch highlights' : 'Preview slot'}
+          {status === 'ready'
+            ? 'Watch highlights'
+            : status === 'coming-soon'
+              ? 'Coming soon'
+              : 'After match'}
         </button>
       </div>
     </article>
@@ -115,12 +119,11 @@ export function HighlightsArchive({ fixtures, onOpenHighlights }) {
     <div className="archive-view">
       <section className="page-heading archive-heading">
         <div>
-          <span className="hand-note">Post-tournament library</span>
+          <span className="hand-note">Match library</span>
           <h2>Highlights archive</h2>
           <p>
-            Every match now has a video slot. Official YouTube links can be
-            added as matches finish, then the archive becomes a full tournament
-            watch-back library.
+            Revisit finished matches from one place. Official highlight videos
+            will appear here as they become available.
           </p>
         </div>
       </section>

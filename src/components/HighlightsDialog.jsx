@@ -69,14 +69,14 @@ export function HighlightsDialog({ fixture, onClose }) {
           <div className="highlight-coming-soon">
             <strong>Highlights coming soon</strong>
             <span>
-              Add the official YouTube link after the match and this card will
-              turn into an embedded highlight reel automatically.
+              Official match highlights will appear here when they are
+              available.
             </span>
           </div>
         )}
 
         <footer className="highlights-footer">
-          <span>{highlight?.source ?? 'Official YouTube link pending'}</span>
+          <span>{highlight?.source ?? 'Official highlights pending'}</span>
           {highlight?.youtubeUrl ? (
             <a href={highlight.youtubeUrl} rel="noreferrer" target="_blank">
               Open on YouTube

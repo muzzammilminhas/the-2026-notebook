@@ -255,7 +255,11 @@ export function FixtureFeed({
                       }
                       type="button"
                     >
-                      {videoStatus === 'ready' ? 'Highlights' : 'Video slot'}
+                      {videoStatus === 'ready'
+                        ? 'Highlights'
+                        : videoStatus === 'coming-soon'
+                          ? 'Coming soon'
+                          : 'After match'}
                     </button>
                   </div>
                 </article>
