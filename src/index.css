@@ -9,6 +9,7 @@
   -webkit-font-smoothing: antialiased;
   --navy: #14233b;
   --ink: #1857c4;
+  --blue: #1857c4;
   --ink-dark: #123c8c;
   --paper: #f6f1df;
   --paper-deep: #ece4cd;
@@ -54,4 +55,3 @@ select:focus-visible {
 #root {
   min-height: 100vh;
 }
-

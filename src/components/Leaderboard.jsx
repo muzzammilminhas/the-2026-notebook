@@ -19,7 +19,34 @@ function Avatar({ seed, name }) {
   )
 }
 
+function PodiumCard({ row, rank, currentUserId }) {
+  const labels = ['Leader', 'Chasing', 'Third']
+
+  return (
+    <article
+      className={`podium-card rank-${rank} ${
+        row.user_id === currentUserId ? 'is-me' : ''
+      }`}
+    >
+      <span className="podium-rank">#{rank}</span>
+      <Avatar name={row.nickname} seed={row.avatar_seed} />
+      <div>
+        <small>{labels[rank - 1]}</small>
+        <strong>{row.nickname}</strong>
+        {row.favorite_team_name ? (
+          <em>{row.favorite_team_name}</em>
+        ) : (
+          <em>No favourite team</em>
+        )}
+      </div>
+      <span className="podium-points">{row.points}</span>
+    </article>
+  )
+}
+
 export function Leaderboard({ rows, currentUserId, loading }) {
+  const podiumRows = rows.slice(0, 3)
+
   return (
     <div className="leaderboard-view">
       <section className="group-heading leaderboard-heading">
@@ -41,6 +68,19 @@ export function Leaderboard({ rows, currentUserId, loading }) {
         </div>
       </section>
 
+      {!loading && podiumRows.length ? (
+        <section className="leader-podium" aria-label="Top leaderboard places">
+          {podiumRows.map((row, index) => (
+            <PodiumCard
+              currentUserId={currentUserId}
+              key={row.user_id}
+              rank={index + 1}
+              row={row}
+            />
+          ))}
+        </section>
+      ) : null}
+
       <section className="leaderboard-paper">
         <div className="leaderboard-labels">
           <span>Rank</span>
@@ -58,7 +98,7 @@ export function Leaderboard({ rows, currentUserId, loading }) {
         ) : null}
         {rows.map((row, index) => (
           <article
-            className={`leader-row ${
+            className={`leader-row rank-${index + 1} ${
               row.user_id === currentUserId ? 'is-me' : ''
             }`}
             key={row.user_id}

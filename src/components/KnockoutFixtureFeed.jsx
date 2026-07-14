@@ -3,6 +3,8 @@ import { isScoreComplete } from '../lib/tournamentEngine'
 import { TEAMS } from '../data/tournament'
 import { TeamName } from './TeamName'
 
+const FEATURE_ROUNDS = new Set(['Semifinals', 'Final'])
+
 function ScoreInput({ value, label, onChange, disabled }) {
   function apply(rawValue) {
     if (rawValue === '') {
@@ -101,6 +103,22 @@ function predictionResult(prediction) {
   return 'Wrong - +0'
 }
 
+function predictionStamp(prediction, isWhatIf, locked) {
+  if (!isWhatIf) return null
+  if (prediction?.scoredAt) {
+    if (prediction.grade === 'exact') return { label: 'Exact', grade: 'exact' }
+    if (prediction.grade === 'correct') {
+      return { label: 'Correct', grade: 'correct' }
+    }
+    return { label: 'Miss', grade: 'wrong' }
+  }
+  if (isScoreComplete(prediction)) {
+    return { label: 'Pick set', grade: 'pending' }
+  }
+  if (locked) return { label: 'Locked', grade: 'locked' }
+  return null
+}
+
 function TeamLabel({ teamId, align }) {
   if (!teamId) {
     return <span className="team-slot-placeholder">To be decided</span>
@@ -145,6 +163,7 @@ export function KnockoutFixtureFeed({
               const match = fixture.match
               const status = matchStatus(match)
               const prediction = predictions[fixture.id] ?? {}
+              const isFeatureFixture = FEATURE_ROUNDS.has(fixture.roundLabel)
               const official = {
                 home: match?.home_score,
                 away: match?.away_score,
@@ -161,6 +180,7 @@ export function KnockoutFixtureFeed({
                 fixture.participantsReady
               const shownScore = editable ? prediction : official
               const resultLabel = predictionResult(prediction)
+              const stamp = predictionStamp(prediction, isWhatIf, locked)
               const needsPenaltyWinner =
                 editable && isScoreComplete(prediction) && prediction.home === prediction.away
               const predictionComplete = isScoreComplete(prediction)
@@ -179,7 +199,9 @@ export function KnockoutFixtureFeed({
                 <article
                   className={`fixture-card knockout-fixture-card ${
                     isScoreComplete(shownScore) ? 'complete' : ''
-                  } ${locked ? 'locked' : ''} ${
+                  } ${locked ? 'locked' : ''} ${status.className} ${
+                    isFeatureFixture ? 'feature-fixture' : ''
+                  } ${
                     needsPenaltyWinner ? 'needs-penalty-winner' : ''
                   }`}
                   key={fixture.id}
@@ -188,6 +210,7 @@ export function KnockoutFixtureFeed({
                   <div className="fixture-identity">
                     <strong>M{match?.match_number ?? fixture.id}</strong>
                     <span>{fixture.roundLabel}</span>
+                    {isFeatureFixture ? <em>Spotlight</em> : null}
                   </div>
 
                   <div className="fixture-matchup">
@@ -255,6 +278,11 @@ export function KnockoutFixtureFeed({
                     <span className={`match-status ${status.className}`}>
                       {status.label}
                     </span>
+                    {stamp ? (
+                      <strong className={`result-stamp ${stamp.grade}`}>
+                        {stamp.label}
+                      </strong>
+                    ) : null}
                     {isWhatIf && locked && isScoreComplete(prediction) ? (
                       <small>
                         Pick {prediction.home}-{prediction.away}

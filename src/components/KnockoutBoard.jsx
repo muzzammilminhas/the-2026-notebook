@@ -1,6 +1,8 @@
 import { TEAMS } from '../data/tournament'
 import { TeamName } from './TeamName'
 
+const SPOTLIGHT_ROUNDS = new Set(['sf', 'final'])
+
 function TeamSlot({ teamId, winnerId, onPick, disabled }) {
   const team = teamId ? TEAMS[teamId] : null
   const isWinner = teamId && winnerId === teamId
@@ -10,9 +12,10 @@ function TeamSlot({ teamId, winnerId, onPick, disabled }) {
     <button
       className={`team-slot ${isWinner ? 'winner' : ''} ${
         isEliminated ? 'eliminated' : ''
-      }`}
+      } ${team ? '' : 'empty'}`}
       disabled={!teamId || disabled}
       onClick={() => onPick(teamId)}
+      aria-pressed={isWinner || undefined}
       type="button"
     >
       {team ? (
@@ -20,7 +23,7 @@ function TeamSlot({ teamId, winnerId, onPick, disabled }) {
       ) : (
         <span className="team-slot-placeholder">To be decided</span>
       )}
-      {isWinner ? <strong>✓</strong> : null}
+      {isWinner ? <strong className="winner-mark">In</strong> : null}
     </button>
   )
 }
@@ -122,13 +125,28 @@ export function KnockoutBoard({
 
       <div className="bracket-scroll">
         <div className="bracket-board">
-          {knockout.rounds.map((round) => (
-            <section className={`round-column ${round.id}`} key={round.id}>
+          {knockout.rounds.map((round) => {
+            const decidedCount = round.matches.filter((match) => {
+              const officialMatch = matchByNumber[match.id]
+              return match.winnerId || officialMatch?.winner_team_id
+            }).length
+
+            return (
+            <section
+              className={`round-column ${round.id} ${
+                SPOTLIGHT_ROUNDS.has(round.id) ? 'spotlight-round' : ''
+              }`}
+              key={round.id}
+            >
               <div className="round-title">
-                <span>{round.label}</span>
+                <div>
+                  <span>{round.label}</span>
+                  {SPOTLIGHT_ROUNDS.has(round.id) ? (
+                    <em>{round.id === 'sf' ? 'Final gates' : 'Last page'}</em>
+                  ) : null}
+                </div>
                 <small>
-                  {round.matches.length}{' '}
-                  {round.matches.length === 1 ? 'match' : 'matches'}
+                  {decidedCount}/{round.matches.length} decided
                 </small>
               </div>
               <div className="round-matches">
@@ -162,17 +180,32 @@ export function KnockoutBoard({
                       ? 'Live'
                       : officialMatch?.status === 'finished'
                         ? officialMatch.verified
-                          ? 'Final · verified'
-                          : 'Final · checking'
+                          ? 'Final - verified'
+                          : 'Final - checking'
                         : formatKickoff(officialMatch?.kickoff_at)
+                  const statusTone =
+                    officialMatch?.status === 'live'
+                      ? 'live'
+                      : officialMatch?.status === 'finished'
+                        ? officialMatch.verified
+                          ? 'verified'
+                          : 'pending'
+                        : 'scheduled'
 
                   return (
                     <article
-                      className={`knockout-match ${locked ? 'locked' : ''}`}
+                      className={`knockout-match ${
+                        locked ? 'locked' : ''
+                      } ${winnerId ? 'decided' : ''} ${statusTone} ${
+                        SPOTLIGHT_ROUNDS.has(round.id)
+                          ? 'spotlight-match'
+                          : ''
+                      }`}
                       key={match.id}
                     >
-                      <span className="match-number">
-                        M{match.id} · {status}
+                      <span className="match-number">M{match.id}</span>
+                      <span className={`bracket-status ${statusTone}`}>
+                        {status}
                       </span>
                       <TeamSlot
                         disabled={selectionDisabled}
@@ -202,7 +235,8 @@ export function KnockoutBoard({
                 })}
               </div>
             </section>
-          ))}
+            )
+          })}
         </div>
       </div>
 

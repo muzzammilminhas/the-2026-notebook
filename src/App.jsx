@@ -157,6 +157,27 @@ function App() {
     knockoutMatchTab === 'completed'
       ? completedKnockoutFixtures
       : upcomingKnockoutFixtures
+  const semifinalFixtures = useMemo(
+    () =>
+      knockoutFixtures.filter((fixture) => fixture.roundLabel === 'Semifinals'),
+    [knockoutFixtures],
+  )
+  const marqueeFixtures = useMemo(
+    () =>
+      knockoutFixtures.filter((fixture) =>
+        ['Semifinals', 'Final'].includes(fixture.roundLabel),
+      ),
+    [knockoutFixtures],
+  )
+  const readySemifinals = semifinalFixtures.filter(
+    (fixture) => fixture.participantsReady,
+  ).length
+  const liveKnockoutCount = knockoutFixtures.filter(
+    (fixture) => fixture.match?.status === 'live',
+  ).length
+  const pickedKnockoutCount = Object.values(backend.knockoutPredictions).filter(
+    (prediction) => Number.isInteger(prediction.home) && Number.isInteger(prediction.away),
+  ).length
 
   function showNotice(message) {
     setNotice(message)
@@ -512,6 +533,40 @@ function App() {
                   My What If bracket
                 </button>
               </div>
+
+              <section
+                className="knockout-command-strip"
+                aria-label="Knockout stage snapshot"
+              >
+                <article className="command-card command-card-primary">
+                  <span>Now watching</span>
+                  <strong>Semi-final desk</strong>
+                  <small>
+                    {readySemifinals}/{semifinalFixtures.length || 2} matchups
+                    ready
+                  </small>
+                </article>
+                <article className="command-card">
+                  <span>Live pulse</span>
+                  <strong>{liveKnockoutCount}</strong>
+                  <small>matches live right now</small>
+                </article>
+                <article className="command-card">
+                  <span>Active queue</span>
+                  <strong>{upcomingKnockoutFixtures.length}</strong>
+                  <small>upcoming knockout matches</small>
+                </article>
+                <article className="command-card">
+                  <span>My picks</span>
+                  <strong>{pickedKnockoutCount}</strong>
+                  <small>scorelines written down</small>
+                </article>
+                <article className="command-card command-card-accent">
+                  <span>Big swing</span>
+                  <strong>{marqueeFixtures.length}</strong>
+                  <small>semi-final/final cards in focus</small>
+                </article>
+              </section>
 
               <section className="knockout-feed-section">
                 <div className="section-title compact">

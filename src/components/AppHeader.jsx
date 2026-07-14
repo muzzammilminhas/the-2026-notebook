@@ -26,6 +26,10 @@ export function AppHeader({
   const [favoriteTeamId, setFavoriteTeamId] = useState(
     profile?.favorite_team_id ?? '',
   )
+  const brandSubtitle =
+    section === 'knockout' || section === 'bracket'
+      ? 'Semi-final watch, predictions & what-if paths'
+      : 'Live results, predictions & what-if paths'
   const favoriteTeam = profile?.favorite_team_id
     ? TEAMS[profile.favorite_team_id]
     : null
@@ -41,8 +45,8 @@ export function AppHeader({
       <div className="brand">
         <span className="brand-mark">26</span>
         <div>
-          <h1>The 2026 Notebook</h1>
-          <p>Live results, predictions &amp; what-if paths</p>
+          <h1>The 2026 Knockout Notebook</h1>
+          <p>{brandSubtitle}</p>
         </div>
       </div>
 
