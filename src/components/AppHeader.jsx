@@ -3,6 +3,8 @@ import { GROUP_IDS, TEAMS } from '../data/tournament'
 
 const SECTIONS = [
   { id: 'knockout', label: 'Knockout' },
+  { id: 'highlights', label: 'Highlights' },
+  { id: 'capsule', label: 'Time Capsule' },
   { id: 'bracket', label: 'Bracket' },
   { id: 'leaderboard', label: 'Leaderboard' },
   { id: 'groups', label: 'Group archive' },
@@ -29,6 +31,8 @@ export function AppHeader({
   const brandSubtitle =
     section === 'knockout' || section === 'bracket'
       ? 'Semi-final watch, predictions & what-if paths'
+      : section === 'highlights' || section === 'capsule'
+        ? 'Highlights, report cards & the final archive'
       : 'Live results, predictions & what-if paths'
   const favoriteTeam = profile?.favorite_team_id
     ? TEAMS[profile.favorite_team_id]

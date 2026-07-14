@@ -1,6 +1,7 @@
 import { groupFixturesByDate } from '../lib/fixtureSchedule'
 import { isScoreComplete } from '../lib/tournamentEngine'
 import { TEAMS } from '../data/tournament'
+import { highlightStatus } from '../data/matchHighlights'
 import { TeamName } from './TeamName'
 
 const FEATURE_ROUNDS = new Set(['Semifinals', 'Final'])
@@ -130,6 +131,7 @@ export function KnockoutFixtureFeed({
   fixtures,
   mode,
   onOpenDetails,
+  onOpenHighlights,
   onScoreChange,
   onWinnerChange,
   predictions,
@@ -164,6 +166,7 @@ export function KnockoutFixtureFeed({
               const status = matchStatus(match)
               const prediction = predictions[fixture.id] ?? {}
               const isFeatureFixture = FEATURE_ROUNDS.has(fixture.roundLabel)
+              const videoStatus = highlightStatus(match)
               const official = {
                 home: match?.home_score,
                 away: match?.away_score,
@@ -298,6 +301,14 @@ export function KnockoutFixtureFeed({
                       type="button"
                     >
                       Community
+                    </button>
+                    <button
+                      aria-label={`Open match ${fixture.id} highlights`}
+                      className={`fixture-highlights-button ${videoStatus}`}
+                      onClick={() => onOpenHighlights(fixture)}
+                      type="button"
+                    >
+                      {videoStatus === 'ready' ? 'Highlights' : 'Video slot'}
                     </button>
                   </div>
                 </article>

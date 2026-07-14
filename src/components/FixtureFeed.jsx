@@ -1,4 +1,5 @@
 import { TEAMS } from '../data/tournament'
+import { highlightStatus } from '../data/matchHighlights'
 import { groupFixturesByDate } from '../lib/fixtureSchedule'
 import { isScoreComplete } from '../lib/tournamentEngine'
 import { TeamName } from './TeamName'
@@ -110,6 +111,7 @@ export function FixtureFeed({
   fixtures,
   mode,
   onOpenDetails,
+  onOpenHighlights,
   onScoreChange,
   predictions,
   savingMatches,
@@ -152,6 +154,7 @@ export function FixtureFeed({
               const editable = isWhatIf && !locked
               const shownScore = editable ? prediction : official
               const resultLabel = predictionResult(prediction)
+              const videoStatus = highlightStatus(match)
               const openDetails = (event) => {
                 if (
                   event?.target?.closest?.(
@@ -237,6 +240,22 @@ export function FixtureFeed({
                       type="button"
                     >
                       Match details
+                    </button>
+                    <button
+                      aria-label={`Open highlights for ${
+                        TEAMS[fixture.homeId].name
+                      } versus ${TEAMS[fixture.awayId].name}`}
+                      className={`fixture-highlights-button ${videoStatus}`}
+                      onClick={() =>
+                        onOpenHighlights({
+                          ...fixture,
+                          roundLabel: `Group ${fixture.groupId}`,
+                          stage: 'group',
+                        })
+                      }
+                      type="button"
+                    >
+                      {videoStatus === 'ready' ? 'Highlights' : 'Video slot'}
                     </button>
                   </div>
                 </article>

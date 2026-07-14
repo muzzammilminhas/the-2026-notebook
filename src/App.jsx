@@ -5,11 +5,14 @@ import { AdminStatus } from './components/AdminStatus'
 import { AuthDialog } from './components/AuthDialog'
 import { FixtureFeed } from './components/FixtureFeed'
 import { FixtureFilters } from './components/FixtureFilters'
+import { HighlightsArchive } from './components/HighlightsArchive'
+import { HighlightsDialog } from './components/HighlightsDialog'
 import { KnockoutFixtureFeed } from './components/KnockoutFixtureFeed'
 import { KnockoutBoard } from './components/KnockoutBoard'
 import { Leaderboard } from './components/Leaderboard'
 import { MatchDetailsDialog } from './components/MatchDetailsDialog'
 import { ScenarioStandingsPanel } from './components/ScenarioStandingsPanel'
+import { TimeCapsule } from './components/TimeCapsule'
 import { TournamentStandings } from './components/TournamentStandings'
 import {
   buildPredictionScores,
@@ -32,8 +35,16 @@ function App() {
   const [section, setSection] = useState(() => {
     const hash = window.location.hash.replace('#', '')
     if (['actual', 'whatif'].includes(hash)) return 'groups'
-    return ['knockout', 'bracket', 'leaderboard', 'groups', 'standings', 'admin']
-      .includes(hash)
+    return [
+      'knockout',
+      'highlights',
+      'capsule',
+      'bracket',
+      'leaderboard',
+      'groups',
+      'standings',
+      'admin',
+    ].includes(hash)
       ? hash
       : 'knockout'
   })
@@ -52,6 +63,7 @@ function App() {
   const [notice, setNotice] = useState('')
   const [authOpen, setAuthOpen] = useState(false)
   const [selectedFixture, setSelectedFixture] = useState(null)
+  const [selectedHighlight, setSelectedHighlight] = useState(null)
 
   const predictionScores = useMemo(
     () =>
@@ -103,6 +115,35 @@ function App() {
   )
   const activeKnockout =
     knockoutMode === 'whatif' ? scenarioKnockout : officialKnockout
+  const officialKnockoutFixtures = useMemo(
+    () =>
+      officialKnockout.rounds
+        .flatMap((round) =>
+          round.matches.map((match) => {
+            const officialMatch = backend.matchByNumber[match.id]
+            return {
+              id: match.id,
+              stage: officialMatch?.stage ?? round.id,
+              roundLabel: round.label,
+              match: officialMatch,
+              homeId: officialMatch?.home_team_id ?? match.participants[0],
+              awayId: officialMatch?.away_team_id ?? match.participants[1],
+              participantsReady: match.participantsReady,
+              dateKey: fixtureDateKey(officialMatch?.kickoff_at),
+            }
+          }),
+        )
+        .sort((left, right) => {
+          const leftTime = left.match?.kickoff_at
+            ? new Date(left.match.kickoff_at).getTime()
+            : Number.POSITIVE_INFINITY
+          const rightTime = right.match?.kickoff_at
+            ? new Date(right.match.kickoff_at).getTime()
+            : Number.POSITIVE_INFINITY
+          return leftTime - rightTime || left.id - right.id
+        }),
+    [backend.matchByNumber, officialKnockout],
+  )
   const knockoutFixtures = useMemo(
     () =>
       activeKnockout.rounds
@@ -176,8 +217,20 @@ function App() {
     (fixture) => fixture.match?.status === 'live',
   ).length
   const pickedKnockoutCount = Object.values(backend.knockoutPredictions).filter(
-    (prediction) => Number.isInteger(prediction.home) && Number.isInteger(prediction.away),
+    (prediction) =>
+      Number.isInteger(prediction.home) && Number.isInteger(prediction.away),
   ).length
+  const archiveFixtures = useMemo(
+    () => [
+      ...fixtureSchedule.map((fixture) => ({
+        ...fixture,
+        roundLabel: `Group ${fixture.groupId}`,
+        stage: 'group',
+      })),
+      ...officialKnockoutFixtures,
+    ],
+    [fixtureSchedule, officialKnockoutFixtures],
+  )
 
   function showNotice(message) {
     setNotice(message)
@@ -480,6 +533,7 @@ function App() {
                   fixtures={filteredFixtures}
                   mode={groupArchiveMode}
                   onOpenDetails={setSelectedFixture}
+                  onOpenHighlights={setSelectedHighlight}
                   onScoreChange={updatePrediction}
                   predictions={backend.predictions}
                   savingMatches={backend.savingMatches}
@@ -501,6 +555,24 @@ function App() {
 
           {section === 'standings' ? (
             <TournamentStandings tournament={actualTournament} />
+          ) : null}
+
+          {section === 'highlights' ? (
+            <HighlightsArchive
+              fixtures={archiveFixtures}
+              onOpenHighlights={setSelectedHighlight}
+            />
+          ) : null}
+
+          {section === 'capsule' ? (
+            <TimeCapsule
+              championId={officialKnockout.championId}
+              currentUserId={backend.user?.id}
+              fixtures={archiveFixtures}
+              leaderboard={backend.leaderboard}
+              profile={backend.profile}
+              scoreSummary={backend.scoreSummary}
+            />
           ) : null}
 
           {section === 'knockout' ? (
@@ -603,6 +675,7 @@ function App() {
                 fixtures={visibleKnockoutFixtures}
                 mode={knockoutMode}
                 onOpenDetails={setSelectedFixture}
+                onOpenHighlights={setSelectedHighlight}
                 onScoreChange={updateKnockoutScore}
                 onWinnerChange={updateKnockoutWinner}
                 predictions={
@@ -699,6 +772,12 @@ function App() {
           fixture={selectedFixture}
           match={selectedFixture.match}
           onClose={() => setSelectedFixture(null)}
+        />
+      ) : null}
+      {selectedHighlight ? (
+        <HighlightsDialog
+          fixture={selectedHighlight}
+          onClose={() => setSelectedHighlight(null)}
         />
       ) : null}
     </div>
