@@ -4,10 +4,10 @@ import { GROUP_IDS, TEAMS } from '../data/tournament'
 const SECTIONS = [
   { id: 'knockout', label: 'Knockout' },
   { id: 'highlights', label: 'Highlights' },
-  { id: 'capsule', label: 'Time Capsule' },
+  { id: 'capsule', label: 'Capsule' },
   { id: 'bracket', label: 'Bracket' },
-  { id: 'leaderboard', label: 'Leaderboard' },
-  { id: 'groups', label: 'Group archive' },
+  { id: 'leaderboard', label: 'Leaders' },
+  { id: 'groups', label: 'Groups' },
   { id: 'standings', label: 'Standings' },
 ]
 
