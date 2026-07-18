@@ -53,6 +53,41 @@ function AwardCard({ label, row, metric, emptyText }) {
   )
 }
 
+function matchGoals(fixture) {
+  const home = fixture?.match?.home_score
+  const away = fixture?.match?.away_score
+  return Number.isInteger(home) && Number.isInteger(away) ? home + away : 0
+}
+
+function winningMargin(fixture) {
+  const home = fixture?.match?.home_score
+  const away = fixture?.match?.away_score
+  return Number.isInteger(home) && Number.isInteger(away)
+    ? Math.abs(home - away)
+    : 0
+}
+
+function fixtureScore(fixture) {
+  return `${fixture.match?.home_score ?? '-'}-${fixture.match?.away_score ?? '-'}`
+}
+
+function MomentRow({ fixture, label, note }) {
+  const homeTeam = fixture?.homeId ? TEAMS[fixture.homeId] : null
+  const awayTeam = fixture?.awayId ? TEAMS[fixture.awayId] : null
+
+  return (
+    <article>
+      <span>{label}</span>
+      <strong>
+        {homeTeam ? <TeamName team={homeTeam} /> : 'Not available'}
+        {fixture ? <b>{fixtureScore(fixture)}</b> : null}
+        {awayTeam ? <TeamName team={awayTeam} /> : null}
+      </strong>
+      <small>{note}</small>
+    </article>
+  )
+}
+
 export function TimeCapsule({
   championId,
   currentUserId,
@@ -68,9 +103,31 @@ export function TimeCapsule({
   const finishedMatches = fixtures.filter(
     (fixture) => fixture.match?.status === 'finished',
   )
+  const finalFixture = fixtures.find(
+    (fixture) => fixture.match?.match_number === 104,
+  )
+  const tournamentComplete = Boolean(
+    champion &&
+      finalFixture?.match?.status === 'finished' &&
+      finalFixture.match.verified,
+  )
+  const finalFinished = finalFixture?.match?.status === 'finished'
+  const finalHome = finalFixture?.homeId ? TEAMS[finalFixture.homeId] : null
+  const finalAway = finalFixture?.awayId ? TEAMS[finalFixture.awayId] : null
+  const remainingMatches = fixtures.length - finishedMatches.length
   const highlightCount = fixtures.filter((fixture) =>
     getMatchHighlight(fixture.match),
   ).length
+  const totalGoals = finishedMatches.reduce(
+    (sum, fixture) => sum + matchGoals(fixture),
+    0,
+  )
+  const highestScoringMatch = [...finishedMatches].sort(
+    (left, right) => matchGoals(right) - matchGoals(left),
+  )[0]
+  const biggestWin = [...finishedMatches].sort(
+    (left, right) => winningMargin(right) - winningMargin(left),
+  )[0]
   const beatPercent =
     currentRank && leaderboard.length > 1
       ? Math.round(
@@ -89,7 +146,7 @@ export function TimeCapsule({
           <h2>World Cup time capsule</h2>
           <p>
             Revisit the tournament through prediction report cards, the Hall of
-            Fame, match highlights, and community moments.
+            Fame, match highlights, and tournament records.
           </p>
         </div>
       </section>
@@ -100,7 +157,7 @@ export function TimeCapsule({
           <h3>{profile?.nickname ?? 'Sign in to reveal your card'}</h3>
           <div className="report-score">
             <strong>{currentRow?.points ?? scoreSummary.points}</strong>
-            <small>final points</small>
+            <small>{tournamentComplete ? 'final points' : 'current points'}</small>
           </div>
           <div className="report-lines">
             <span>
@@ -122,13 +179,24 @@ export function TimeCapsule({
         </article>
 
         <article className="champion-memory">
-          <span>Champion memory</span>
+          <span>{tournamentComplete ? 'World champion' : 'Final pairing'}</span>
           <strong>
-            {champion ? <TeamName team={champion} /> : 'Still unwritten'}
+            {champion ? (
+              <TeamName team={champion} />
+            ) : finalHome && finalAway ? (
+              <span className="capsule-final-pairing">
+                <TeamName team={finalHome} />
+                <b>vs</b>
+                <TeamName team={finalAway} />
+              </span>
+            ) : (
+              'Still unwritten'
+            )}
           </strong>
           <small>
-            The final archive hero will lock here after the verified champion
-            is known.
+            {tournamentComplete
+              ? 'The last verified result has sealed the tournament archive.'
+              : 'The champion memory locks here after the final whistle.'}
           </small>
         </article>
       </section>
@@ -146,13 +214,25 @@ export function TimeCapsule({
         />
         <CapsuleMetric
           label="Leaderboard entries"
-          note="players on the final table"
+          note="players in the standings"
           value={leaderboard.length}
         />
         <CapsuleMetric
-          label="Final stretch"
-          note="the archive grows every match"
-          value="Live"
+          label="Tournament state"
+          note={
+            tournamentComplete
+              ? 'all results verified'
+              : finalFinished
+                ? 'final result awaiting verification'
+              : `${remainingMatches} ${remainingMatches === 1 ? 'match' : 'matches'} remain`
+          }
+          value={
+            tournamentComplete
+              ? 'Complete'
+              : finalFinished
+                ? 'Checking'
+                : 'Final weekend'
+          }
         />
       </section>
 
@@ -160,24 +240,24 @@ export function TimeCapsule({
         <article className="capsule-panel">
           <header>
             <span>Hall of Fame</span>
-            <h3>Final awards board</h3>
+            <h3>{tournamentComplete ? 'Final awards board' : 'Awards race'}</h3>
           </header>
           <div className="award-grid">
             <AwardCard
               emptyText="The points leader will be crowned here."
-              label="Notebook Champion"
+              label={tournamentComplete ? 'Notebook Champion' : 'Points leader'}
               metric={`${championLeader?.points ?? 0} points`}
               row={championLeader}
             />
             <AwardCard
               emptyText="The sharpest score predictor will be crowned here."
-              label="Oracle"
+              label={tournamentComplete ? 'Oracle' : 'Exact score leader'}
               metric={`${exactLeader?.exact_scores ?? 0} exact scores`}
               row={exactLeader}
             />
             <AwardCard
               emptyText="The best knockout predictor will be crowned here."
-              label="Knockout King"
+              label={tournamentComplete ? 'Knockout King' : 'Knockout leader'}
               metric={`${knockoutLeader?.correct_knockout ?? 0} knockout hits`}
               row={knockoutLeader}
             />
@@ -186,14 +266,30 @@ export function TimeCapsule({
 
         <article className="capsule-panel">
           <header>
-            <span>Community story</span>
-            <h3>Moments to revisit after the final</h3>
+            <span>Tournament story</span>
+            <h3>The numbers worth remembering</h3>
           </header>
           <div className="story-list">
-            <span>Most predicted champion</span>
-            <span>Match the community got most wrong</span>
-            <span>Biggest upset against the crowd</span>
-            <span>Most predictable exact score</span>
+            <MomentRow
+              fixture={highestScoringMatch}
+              label="Highest-scoring match"
+              note={`${matchGoals(highestScoringMatch)} goals in one game`}
+            />
+            <MomentRow
+              fixture={biggestWin}
+              label="Biggest winning margin"
+              note={`${winningMargin(biggestWin)} goals between the teams`}
+            />
+            <article className="story-total">
+              <span>Goals recorded</span>
+              <strong>{totalGoals}</strong>
+              <small>across {finishedMatches.length} finished matches</small>
+            </article>
+            <article className="story-total">
+              <span>Official videos</span>
+              <strong>{highlightCount}</strong>
+              <small>highlights ready to replay</small>
+            </article>
           </div>
         </article>
 

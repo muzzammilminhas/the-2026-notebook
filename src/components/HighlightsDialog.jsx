@@ -54,17 +54,22 @@ export function HighlightsDialog({ fixture, onClose }) {
           </div>
         </header>
 
-        {highlight?.embedUrl ? (
-          <div className="highlight-video">
-            <iframe
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="strict-origin-when-cross-origin"
-              src={highlight.embedUrl}
-              title={highlight.title}
-            />
-          </div>
+        {highlight?.thumbnailUrl ? (
+          <a
+            className="highlight-video"
+            href={highlight.youtubeUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <img alt="" loading="lazy" src={highlight.thumbnailUrl} />
+            <span className="highlight-video-action">
+              <i aria-hidden="true" />
+              <span>
+                <small>Official FIFA highlights</small>
+                <strong>Watch on YouTube</strong>
+              </span>
+            </span>
+          </a>
         ) : (
           <div className="highlight-coming-soon">
             <strong>Highlights coming soon</strong>

@@ -1,7 +1,7 @@
 import { TEAMS } from '../data/tournament'
 import { TeamName } from './TeamName'
 
-const SPOTLIGHT_ROUNDS = new Set(['sf', 'final'])
+const SPOTLIGHT_ROUNDS = new Set(['third', 'final'])
 
 function TeamSlot({ teamId, winnerId, onPick, disabled }) {
   const team = teamId ? TEAMS[teamId] : null
@@ -142,7 +142,7 @@ export function KnockoutBoard({
                 <div>
                   <span>{round.label}</span>
                   {SPOTLIGHT_ROUNDS.has(round.id) ? (
-                    <em>{round.id === 'sf' ? 'Final gates' : 'Last page'}</em>
+                    <em>{round.id === 'third' ? 'Bronze match' : 'For the trophy'}</em>
                   ) : null}
                 </div>
                 <small>

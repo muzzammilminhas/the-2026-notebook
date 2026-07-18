@@ -5,6 +5,7 @@ import { AdminStatus } from './components/AdminStatus'
 import { AuthDialog } from './components/AuthDialog'
 import { FixtureFeed } from './components/FixtureFeed'
 import { FixtureFilters } from './components/FixtureFilters'
+import { FinalShowdown } from './components/FinalShowdown'
 import { HighlightsArchive } from './components/HighlightsArchive'
 import { HighlightsDialog } from './components/HighlightsDialog'
 import { KnockoutFixtureFeed } from './components/KnockoutFixtureFeed'
@@ -198,20 +199,14 @@ function App() {
     knockoutMatchTab === 'completed'
       ? completedKnockoutFixtures
       : upcomingKnockoutFixtures
-  const semifinalFixtures = useMemo(
-    () =>
-      knockoutFixtures.filter((fixture) => fixture.roundLabel === 'Semifinals'),
-    [knockoutFixtures],
+  const finalFixture = knockoutFixtures.find(
+    (fixture) => fixture.roundLabel === 'Final',
   )
-  const marqueeFixtures = useMemo(
-    () =>
-      knockoutFixtures.filter((fixture) =>
-        ['Semifinals', 'Final'].includes(fixture.roundLabel),
-      ),
-    [knockoutFixtures],
+  const thirdPlaceFixture = knockoutFixtures.find(
+    (fixture) => fixture.roundLabel === 'Third place',
   )
-  const readySemifinals = semifinalFixtures.filter(
-    (fixture) => fixture.participantsReady,
+  const finalistsReady = [finalFixture?.homeId, finalFixture?.awayId].filter(
+    Boolean,
   ).length
   const liveKnockoutCount = knockoutFixtures.filter(
     (fixture) => fixture.match?.status === 'live',
@@ -220,6 +215,10 @@ function App() {
     (prediction) =>
       Number.isInteger(prediction.home) && Number.isInteger(prediction.away),
   ).length
+  const finalPicksCount = [103, 104].filter((matchId) => {
+    const prediction = backend.knockoutPredictions[matchId]
+    return Number.isInteger(prediction?.home) && Number.isInteger(prediction?.away)
+  }).length
   const archiveFixtures = useMemo(
     () => [
       ...fixtureSchedule.map((fixture) => ({
@@ -240,6 +239,18 @@ function App() {
   function changeSection(nextSection) {
     setSection(nextSection)
     window.history.replaceState(null, '', `#${nextSection}`)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function focusKnockoutFixture(fixture) {
+    setKnockoutMatchTab(
+      fixture.match?.status === 'finished' ? 'completed' : 'upcoming',
+    )
+    window.setTimeout(() => {
+      document
+        .getElementById(`match-${fixture.id}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 0)
   }
 
   async function updatePrediction(fixtureId, side, value) {
@@ -577,66 +588,46 @@ function App() {
 
           {section === 'knockout' ? (
             <div className="knockout-page">
-              <section className="page-heading fixture-page-heading">
-                <div>
-                  <span className="hand-note">Knockout stage</span>
-                  <h2>Knockout matches</h2>
-                  <p>
-                    Predict winners with scorelines. Correct winner is worth 2,
-                    exact score is worth 4, and the champion gets a 5 point
-                    bonus.
-                  </p>
-                </div>
-              </section>
-
-              <div className="knockout-mode-switch" aria-label="Knockout mode">
-                <button
-                  className={knockoutMode === 'official' ? 'active' : ''}
-                  onClick={() => setKnockoutMode('official')}
-                  type="button"
-                >
-                  Official bracket
-                </button>
-                <button
-                  className={knockoutMode === 'whatif' ? 'active' : ''}
-                  onClick={() => setKnockoutMode('whatif')}
-                  type="button"
-                >
-                  My What If bracket
-                </button>
-              </div>
+              <FinalShowdown
+                finalFixture={finalFixture}
+                mode={knockoutMode}
+                onModeChange={setKnockoutMode}
+                onOpenMatch={focusKnockoutFixture}
+                thirdPlaceFixture={thirdPlaceFixture}
+              />
 
               <section
                 className="knockout-command-strip"
-                aria-label="Knockout stage snapshot"
+                aria-label="Final weekend snapshot"
               >
                 <article className="command-card command-card-primary">
                   <span>Now watching</span>
-                  <strong>Semi-final desk</strong>
+                  <strong>Final weekend</strong>
+                  <small>the trophy and bronze are still on the line</small>
+                </article>
+                <article className="command-card">
+                  <span>Finalists</span>
+                  <strong>{finalistsReady}/2</strong>
                   <small>
-                    {readySemifinals}/{semifinalFixtures.length || 2} matchups
-                    ready
+                    {finalistsReady === 2
+                      ? 'Spain and Argentina'
+                      : 'still unfolding'}
                   </small>
+                </article>
+                <article className="command-card">
+                  <span>Matches left</span>
+                  <strong>{upcomingKnockoutFixtures.length}</strong>
+                  <small>before the notebook closes</small>
                 </article>
                 <article className="command-card">
                   <span>Live pulse</span>
                   <strong>{liveKnockoutCount}</strong>
                   <small>matches live right now</small>
                 </article>
-                <article className="command-card">
-                  <span>Active queue</span>
-                  <strong>{upcomingKnockoutFixtures.length}</strong>
-                  <small>upcoming knockout matches</small>
-                </article>
-                <article className="command-card">
-                  <span>My picks</span>
-                  <strong>{pickedKnockoutCount}</strong>
-                  <small>scorelines written down</small>
-                </article>
                 <article className="command-card command-card-accent">
-                  <span>Big swing</span>
-                  <strong>{marqueeFixtures.length}</strong>
-                  <small>semi-final/final cards in focus</small>
+                  <span>My last picks</span>
+                  <strong>{finalPicksCount}/2</strong>
+                  <small>{pickedKnockoutCount} knockout scorelines overall</small>
                 </article>
               </section>
 

@@ -30,7 +30,7 @@ export function AppHeader({
   )
   const brandSubtitle =
     section === 'knockout' || section === 'bracket'
-      ? 'Semi-final watch, predictions & what-if paths'
+      ? 'Final showdown, predictions & the road to the trophy'
       : section === 'highlights' || section === 'capsule'
         ? 'Highlights, report cards & the final archive'
       : 'Live results, predictions & what-if paths'

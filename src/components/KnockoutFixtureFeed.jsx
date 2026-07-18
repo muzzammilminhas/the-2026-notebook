@@ -4,7 +4,7 @@ import { TEAMS } from '../data/tournament'
 import { highlightStatus } from '../data/matchHighlights'
 import { TeamName } from './TeamName'
 
-const FEATURE_ROUNDS = new Set(['Semifinals', 'Final'])
+const FEATURE_ROUNDS = new Set(['Third place', 'Final'])
 
 function ScoreInput({ value, label, onChange, disabled }) {
   function apply(rawValue) {
@@ -207,6 +207,7 @@ export function KnockoutFixtureFeed({
                   } ${
                     needsPenaltyWinner ? 'needs-penalty-winner' : ''
                   }`}
+                  id={`match-${fixture.id}`}
                   key={fixture.id}
                   onClick={openDetails}
                 >
