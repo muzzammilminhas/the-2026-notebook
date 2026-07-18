@@ -65,7 +65,7 @@ export function HighlightsDialog({ fixture, onClose }) {
             <span className="highlight-video-action">
               <i aria-hidden="true" />
               <span>
-                <small>Official FIFA highlights</small>
+                <small>Full match highlights</small>
                 <strong>Watch on YouTube</strong>
               </span>
             </span>
@@ -74,7 +74,7 @@ export function HighlightsDialog({ fixture, onClose }) {
           <div className="highlight-coming-soon">
             <strong>Highlights coming soon</strong>
             <span>
-              Official match highlights will appear here when they are
+              Match highlights will appear here when a verified video is
               available.
             </span>
           </div>

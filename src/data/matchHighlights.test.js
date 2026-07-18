@@ -6,21 +6,36 @@ import {
 } from './matchHighlights'
 
 describe('match highlights archive', () => {
-  it('includes the quarterfinals and semifinals', () => {
-    expect(Object.keys(MATCH_HIGHLIGHTS).map(Number)).toEqual([
-      97, 98, 99, 100, 101, 102,
-    ])
+  it('includes every completed match with a verified Tapmad upload', () => {
+    const matchNumbers = Object.keys(MATCH_HIGHLIGHTS).map(Number)
+    const missingFinishedMatches = Array.from(
+      { length: 102 },
+      (_, index) => index + 1,
+    ).filter((matchNumber) => !matchNumbers.includes(matchNumber))
+
+    expect(matchNumbers).toHaveLength(101)
+    expect(missingFinishedMatches).toEqual([51])
+    expect(MATCH_HIGHLIGHTS[103]).toBeUndefined()
+    expect(MATCH_HIGHLIGHTS[104]).toBeUndefined()
   })
 
-  it('builds privacy-enhanced YouTube embeds', () => {
-    const highlight = getMatchHighlight({ match_number: 101 })
+  it('builds Tapmad links, titles, thumbnails and privacy-enhanced embeds', () => {
+    const highlight = getMatchHighlight({
+      match_number: 101,
+      home_team_id: 'I1',
+      away_team_id: 'H1',
+    })
 
-    expect(highlight.source).toBe('FIFA')
+    expect(highlight.source).toBe('tapmad')
+    expect(highlight.title).toBe('France vs Spain | Full highlights')
+    expect(highlight.youtubeUrl).toBe(
+      'https://www.youtube.com/watch?v=Ho_u5uaCH40',
+    )
     expect(highlight.embedUrl).toBe(
-      'https://www.youtube-nocookie.com/embed/_cV8QcKp3GU',
+      'https://www.youtube-nocookie.com/embed/Ho_u5uaCH40',
     )
     expect(highlight.thumbnailUrl).toBe(
-      'https://i.ytimg.com/vi/_cV8QcKp3GU/hqdefault.jpg',
+      'https://i.ytimg.com/vi/Ho_u5uaCH40/hqdefault.jpg',
     )
   })
 

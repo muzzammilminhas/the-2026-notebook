@@ -122,8 +122,8 @@ export function HighlightsArchive({ fixtures, onOpenHighlights }) {
           <span className="hand-note">Match library</span>
           <h2>Highlights archive</h2>
           <p>
-            Revisit finished matches from one place. Official highlight videos
-            will appear here as they become available.
+            Revisit finished matches from one place. Full highlights are linked
+            from tapmad on YouTube as verified uploads become available.
           </p>
         </div>
       </section>
