@@ -163,6 +163,7 @@ export function KnockoutFixtureFeed({
           <div className="fixture-day-list">
             {section.fixtures.map((fixture) => {
               const match = fixture.match
+              const isFinal = Number(match?.match_number ?? fixture.id) === 104
               const status = matchStatus(match)
               const prediction = predictions[fixture.id] ?? {}
               const isFeatureFixture = FEATURE_ROUNDS.has(fixture.roundLabel)
@@ -296,12 +297,16 @@ export function KnockoutFixtureFeed({
                       </small>
                     ) : null}
                     <button
-                      aria-label={`Open match ${fixture.id} community predictions`}
+                      aria-label={
+                        isFinal
+                          ? 'Open final match centre'
+                          : `Open match ${fixture.id} community predictions`
+                      }
                       className="fixture-details-button"
                       onClick={() => onOpenDetails(fixture)}
                       type="button"
                     >
-                      Community
+                      {isFinal ? 'Match centre' : 'Community'}
                     </button>
                     <button
                       aria-label={`Open match ${fixture.id} highlights`}

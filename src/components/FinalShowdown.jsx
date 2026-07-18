@@ -51,10 +51,19 @@ function TeamSide({ align, label, teamId }) {
 function FixtureButton({ fixture, mode, onOpenMatch }) {
   if (!fixture) return null
   const finished = fixture.match?.status === 'finished'
+  const isFinal = Number(fixture.match?.match_number ?? fixture.id) === 104
 
   return (
     <button onClick={() => onOpenMatch(fixture)} type="button">
-      {finished ? 'Relive match' : mode === 'whatif' ? 'Set scoreline' : 'Open match'}
+      {finished
+        ? isFinal
+          ? 'Relive final'
+          : 'Relive match'
+        : mode === 'whatif'
+          ? 'Set scoreline'
+          : isFinal
+            ? 'Enter match centre'
+            : 'Open match'}
     </button>
   )
 }

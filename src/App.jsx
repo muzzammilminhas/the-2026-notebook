@@ -243,6 +243,13 @@ function App() {
   }
 
   function focusKnockoutFixture(fixture) {
+    if (
+      knockoutMode === 'official'
+      && Number(fixture.match?.match_number) === 104
+    ) {
+      setSelectedFixture(fixture)
+      return
+    }
     setKnockoutMatchTab(
       fixture.match?.status === 'finished' ? 'completed' : 'upcoming',
     )

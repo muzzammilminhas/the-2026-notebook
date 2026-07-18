@@ -5,11 +5,19 @@ import {
   fifaMatchCentreUrl,
 } from '../lib/matchDetails'
 import { supabase } from '../lib/supabase'
+import { TeamName } from './TeamName'
 
-const TABS = [
+const STANDARD_TABS = [
   ['overview', 'Overview'],
   ['events', 'Events'],
   ['stats', 'Stats'],
+  ['lineups', 'Lineups'],
+  ['community', 'Community'],
+]
+const FINAL_TABS = [
+  ['overview', 'Match'],
+  ['events', 'Timeline'],
+  ['stats', 'Statistics'],
   ['lineups', 'Lineups'],
   ['community', 'Community'],
 ]
@@ -29,13 +37,14 @@ function formatDate(value) {
 }
 
 function statusLabel(match, details) {
-  if (match.status === 'live') {
+  const status = details?.status ?? match.status
+  if (status === 'live') {
     return details?.matchTime && details.matchTime !== "0'"
       ? details.matchTime
       : 'Live'
   }
-  if (match.status === 'finished') return 'Full time'
-  if (match.status !== 'scheduled') return match.status
+  if (status === 'finished') return 'Full time'
+  if (status !== 'scheduled') return status
   return 'Upcoming'
 }
 
@@ -57,17 +66,58 @@ function InfoItem({ label, children }) {
   )
 }
 
-function TeamLineup({ team }) {
+function shortPlayerName(name = '') {
+  const parts = name.trim().split(/\s+/)
+  return parts.at(-1) || name
+}
+
+function LineupPitch({ team }) {
+  const rows = [
+    team.starters.filter((player) => player.position === 3),
+    team.starters.filter((player) => player.position === 2),
+    team.starters.filter((player) => player.position === 1),
+    team.starters.filter((player) => player.position === 0),
+  ].filter((row) => row.length)
+
+  if (!rows.length) return null
+
+  return (
+    <div className="lineup-pitch" aria-label={`${team.name} formation`}>
+      <i className="pitch-halfway" aria-hidden="true" />
+      <i className="pitch-centre" aria-hidden="true" />
+      <i className="pitch-box pitch-box-top" aria-hidden="true" />
+      <i className="pitch-box pitch-box-bottom" aria-hidden="true" />
+      <div className="lineup-pitch-rows">
+        {rows.map((row, rowIndex) => (
+          <div className="lineup-pitch-row" key={`${rowIndex}-${row.length}`}>
+            {row.map((player) => (
+              <span key={player.id} title={player.name}>
+                <b>{player.number ?? '-'}</b>
+                <small>{shortPlayerName(player.name)}</small>
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TeamLineup({ notebookTeam, team }) {
   return (
     <section className="lineup-team">
       <header>
         <div>
           <span>{team.abbreviation}</span>
-          <h4>{team.name}</h4>
+          <h4>
+            {notebookTeam ? <TeamName team={notebookTeam} /> : team.name}
+          </h4>
         </div>
         <strong>{team.formation || 'Formation pending'}</strong>
       </header>
       {team.coach ? <p>Coach: {team.coach}</p> : null}
+      <LineupPitch team={team} />
+      <h5>Starting XI</h5>
       <div className="lineup-list">
         {team.starters.length ? (
           team.starters.map((player) => (
@@ -96,6 +146,23 @@ function TeamLineup({ team }) {
       ) : null}
     </section>
   )
+}
+
+function PendingPanel({ children, title }) {
+  return (
+    <div className="match-data-pending">
+      <strong>{title}</strong>
+      <span>{children}</span>
+    </div>
+  )
+}
+
+function statShare(stat) {
+  const home = Number(stat.rawHome)
+  const away = Number(stat.rawAway)
+  const total = home + away
+  if (!Number.isFinite(total) || total <= 0) return 50
+  return Math.round((home / total) * 100)
 }
 
 function predictionGrade(row) {
@@ -273,12 +340,20 @@ export function MatchDetailsDialog({
   match,
   onClose,
 }) {
-  const communityOnly = fixture.stage !== 'group'
+  const finalExperience = Number(match.match_number) === 104
+  const communityOnly = fixture.stage !== 'group' && !finalExperience
+  const tabs = communityOnly
+    ? COMMUNITY_ONLY_TABS
+    : finalExperience
+      ? FINAL_TABS
+      : STANDARD_TABS
   const [activeTab, setActiveTab] = useState(
     communityOnly ? 'community' : 'overview',
   )
   const [details, setDetails] = useState(null)
+  const [detailsUpdatedAt, setDetailsUpdatedAt] = useState(null)
   const [error, setError] = useState('')
+  const [eventsFilter, setEventsFilter] = useState('key')
   const [community, setCommunity] = useState({
     rows: [],
     scores: [],
@@ -303,6 +378,7 @@ export function MatchDetailsDialog({
         const result = await fetchMatchDetails(match, force)
         if (!cancelled) {
           setDetails(result)
+          setDetailsUpdatedAt(new Date())
           setError('')
         }
       } catch (requestError) {
@@ -316,8 +392,11 @@ export function MatchDetailsDialog({
     }
 
     loadDetails()
-    if (match.status === 'live') {
-      refreshTimer = window.setInterval(() => loadDetails(true), 60_000)
+    if (
+      match.status === 'live'
+      || (finalExperience && match.status !== 'finished')
+    ) {
+      refreshTimer = window.setInterval(() => loadDetails(true), 45_000)
     }
 
     return () => {
@@ -326,7 +405,7 @@ export function MatchDetailsDialog({
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', closeOnEscape)
     }
-  }, [match, onClose])
+  }, [finalExperience, match, onClose])
 
   useEffect(() => {
     if (activeTab !== 'community' || community.loaded) return
@@ -381,22 +460,42 @@ export function MatchDetailsDialog({
     }
   }, [activeTab, community.loaded, communityOnly, match.id, match.match_number])
 
-  const homeTeamId = fixture.homeId ?? match.home_team_id
-  const awayTeamId = fixture.awayId ?? match.away_team_id
-  const homeName = TEAMS[homeTeamId]?.name ?? details?.home.name ?? 'TBD'
-  const awayName = TEAMS[awayTeamId]?.name ?? details?.away.name ?? 'TBD'
-  const homeScore = match.home_score ?? details?.home.score
-  const awayScore = match.away_score ?? details?.away.score
+  const homeTeamId = finalExperience
+    ? match.home_team_id
+    : fixture.homeId ?? match.home_team_id
+  const awayTeamId = finalExperience
+    ? match.away_team_id
+    : fixture.awayId ?? match.away_team_id
+  const communityFixture = finalExperience
+    ? { ...fixture, homeId: homeTeamId, awayId: awayTeamId }
+    : fixture
+  const homeTeam = TEAMS[homeTeamId]
+  const awayTeam = TEAMS[awayTeamId]
+  const homeName = homeTeam?.name ?? details?.home.name ?? 'TBD'
+  const awayName = awayTeam?.name ?? details?.away.name ?? 'TBD'
+  const homeScore = details?.home.score ?? match.home_score
+  const awayScore = details?.away.score ?? match.away_score
   const source = match.source_payload ?? {}
   const stadium = details?.stadium ?? source.stadium
   const city = details?.city ?? source.city
+  const visibleEvents = details?.events.filter(
+    (event) => !finalExperience || eventsFilter === 'all' || event.keyEvent,
+  ) ?? []
+  const statCategories = details?.stats.reduce((categories, stat) => {
+    const category = stat.category ?? 'Match statistics'
+    if (!categories.has(category)) categories.set(category, [])
+    categories.get(category).push(stat)
+    return categories
+  }, new Map()) ?? new Map()
 
   return (
     <div className="match-details-backdrop" onMouseDown={onClose}>
       <section
         aria-labelledby="match-details-title"
         aria-modal="true"
-        className="match-details-dialog"
+        className={`match-details-dialog ${
+          finalExperience ? 'final-match-centre' : ''
+        }`}
         onMouseDown={(event) => event.stopPropagation()}
         role="dialog"
       >
@@ -410,6 +509,9 @@ export function MatchDetailsDialog({
         </button>
 
         <header className="match-details-hero">
+          {finalExperience ? (
+            <span className="final-centre-label">FIFA World Cup 2026 Final</span>
+          ) : null}
           <div className="match-details-kicker">
             <span>
               M{match.match_number} -{' '}
@@ -420,11 +522,17 @@ export function MatchDetailsDialog({
             </strong>
           </div>
           <div className="match-details-score">
-            <strong>{homeName}</strong>
+            <strong>
+              {homeTeam ? (
+                <TeamName align="end" team={homeTeam} />
+              ) : homeName}
+            </strong>
             <span>{homeScore ?? '-'}</span>
             <i>:</i>
             <span>{awayScore ?? '-'}</span>
-            <strong>{awayName}</strong>
+            <strong>
+              {awayTeam ? <TeamName team={awayTeam} /> : awayName}
+            </strong>
           </div>
           <p id="match-details-title">
             {stadium ? `${stadium}${city ? `, ${city}` : ''}` : formatDate(match.kickoff_at)}
@@ -435,15 +543,18 @@ export function MatchDetailsDialog({
           aria-label="Match detail sections"
           className={`match-details-tabs ${communityOnly ? 'community-only' : ''}`}
         >
-          {(communityOnly ? COMMUNITY_ONLY_TABS : TABS).map(([id, label]) => (
+          {tabs.map(([id, label]) => (
             <button
               className={activeTab === id ? 'active' : ''}
               disabled={
-                (id === 'events' && !details?.events.length)
-                || (id === 'stats' && !details?.stats.length)
-                || (id === 'lineups'
-                  && !details?.home.starters.length
-                  && !details?.away.starters.length)
+                !finalExperience
+                && (
+                  (id === 'events' && !details?.events.length)
+                  || (id === 'stats' && !details?.stats.length)
+                  || (id === 'lineups'
+                    && !details?.home.starters.length
+                    && !details?.away.starters.length)
+                )
               }
               key={id}
               onClick={() => setActiveTab(id)}
@@ -470,70 +581,193 @@ export function MatchDetailsDialog({
           ) : null}
 
           {activeTab === 'overview' ? (
-            <div className="match-overview-grid">
-              <InfoItem label="Kickoff">{formatDate(match.kickoff_at)}</InfoItem>
-              <InfoItem label="Venue">
-                {stadium ? `${stadium}${city ? `, ${city}` : ''}` : null}
-              </InfoItem>
-              <InfoItem label="Weather">
-                <Weather weather={details?.weather ?? source.weather} />
-              </InfoItem>
-              <InfoItem label="Referee">
-                {details?.referee ?? source.referee}
-              </InfoItem>
-              <InfoItem label="Attendance">
-                {details?.attendance?.toLocaleString() ?? source.attendance}
-              </InfoItem>
-              <InfoItem label="Match status">
-                {statusLabel(match, details)}
-              </InfoItem>
+            <div className="match-overview">
+              {finalExperience ? (
+                <section className="final-feed-status" aria-label="FIFA feed status">
+                  <div className={details ? 'ready' : ''}>
+                    <span>Match feed</span>
+                    <strong>{details ? 'Connected' : 'Connecting'}</strong>
+                  </div>
+                  <div className={details?.home.starters.length ? 'ready' : ''}>
+                    <span>Starting XIs</span>
+                    <strong>
+                      {details?.home.starters.length ? 'Published' : 'Awaiting teams'}
+                    </strong>
+                  </div>
+                  <div className={details?.stats.length ? 'ready' : ''}>
+                    <span>Live statistics</span>
+                    <strong>{details?.stats.length ? 'Available' : 'Starts at kickoff'}</strong>
+                  </div>
+                  <div className={details?.events.length ? 'ready' : ''}>
+                    <span>Action timeline</span>
+                    <strong>{details?.events.length ? 'Live' : 'Starts at kickoff'}</strong>
+                  </div>
+                </section>
+              ) : null}
+
+              <div className="match-overview-grid">
+                <InfoItem label="Kickoff">{formatDate(match.kickoff_at)}</InfoItem>
+                <InfoItem label="Venue">
+                  {stadium ? `${stadium}${city ? `, ${city}` : ''}` : null}
+                </InfoItem>
+                <InfoItem label="Weather">
+                  <Weather weather={details?.weather ?? source.weather} />
+                </InfoItem>
+                <InfoItem label="Referee">
+                  {details?.referee ?? source.referee}
+                </InfoItem>
+                <InfoItem label="Attendance">
+                  {details?.attendance?.toLocaleString() ?? source.attendance}
+                </InfoItem>
+                <InfoItem label="Match status">
+                  {statusLabel(match, details)}
+                </InfoItem>
+                {finalExperience ? (
+                  <>
+                    <InfoItem label="Stage">{details?.stageName ?? 'Final'}</InfoItem>
+                    <InfoItem label="FIFA feed refreshed">
+                      {detailsUpdatedAt
+                        ? new Intl.DateTimeFormat(undefined, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            second: '2-digit',
+                          }).format(detailsUpdatedAt)
+                        : null}
+                    </InfoItem>
+                  </>
+                ) : null}
+              </div>
+
+              {finalExperience && details?.officials.length ? (
+                <section className="match-officials">
+                  <header>
+                    <span>Match officials</span>
+                    <strong>{details.officials.length} appointed</strong>
+                  </header>
+                  <div>
+                    {details.officials.map((official) => (
+                      <article key={official.id}>
+                        <span>{official.role}</span>
+                        <strong>{official.name}</strong>
+                        <small>{official.countryId}</small>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
             </div>
           ) : null}
 
           {activeTab === 'events' && details ? (
-            <div className="match-events">
-              {details.events.map((event, index) => (
-                <div className={`match-event ${event.side}`} key={`${event.type}-${event.minute}-${index}`}>
-                  <time>{event.minute}</time>
-                  <span>
-                    <strong>{event.type}</strong>
-                    {event.label}
-                  </span>
-                  <small>{event.teamName}</small>
+            details.events.length ? (
+              <div className="match-timeline">
+                {finalExperience ? (
+                  <header className="timeline-controls">
+                    <div>
+                      <span>Live action feed</span>
+                      <strong>{details.events.length} events from FIFA</strong>
+                    </div>
+                    <div aria-label="Timeline filter">
+                      <button
+                        className={eventsFilter === 'key' ? 'active' : ''}
+                        onClick={() => setEventsFilter('key')}
+                        type="button"
+                      >
+                        Key moments
+                      </button>
+                      <button
+                        className={eventsFilter === 'all' ? 'active' : ''}
+                        onClick={() => setEventsFilter('all')}
+                        type="button"
+                      >
+                        All action
+                      </button>
+                    </div>
+                  </header>
+                ) : null}
+                <div className="match-events">
+                  {visibleEvents.map((event) => (
+                    <div
+                      className={`match-event ${event.side} ${event.keyEvent ? 'key-event' : ''}`}
+                      key={event.id}
+                    >
+                      <time>{event.minute || '-'}</time>
+                      <span>
+                        <strong>{event.type}</strong>
+                        {event.label}
+                      </span>
+                      <small>
+                        {event.homeScore != null && event.awayScore != null
+                          ? `${event.homeScore} : ${event.awayScore}`
+                          : event.teamName}
+                      </small>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <PendingPanel title="Timeline opens at kickoff">
+                FIFA will publish every match event here as the final unfolds.
+              </PendingPanel>
+            )
           ) : null}
 
           {activeTab === 'stats' && details ? (
-            <div className="match-stats">
-              <header>
-                <strong>{details.home.abbreviation}</strong>
-                <span>Team statistics</span>
-                <strong>{details.away.abbreviation}</strong>
-              </header>
-              {details.stats.map((stat) => (
-                <div className="match-stat-row" key={stat.key}>
-                  <strong>{stat.home ?? '-'}</strong>
-                  <span>{stat.label}</span>
-                  <strong>{stat.away ?? '-'}</strong>
-                </div>
-              ))}
-            </div>
+            details.stats.length ? (
+              <div className="match-stats">
+                <header>
+                  <strong>{details.home.abbreviation}</strong>
+                  <span>Official team statistics</span>
+                  <strong>{details.away.abbreviation}</strong>
+                </header>
+                {[...statCategories.entries()].map(([category, stats]) => (
+                  <section className="match-stat-group" key={category}>
+                    <h4>{category}</h4>
+                    {stats.map((stat) => {
+                      const homeShare = statShare(stat)
+                      return (
+                        <div className="match-stat-row" key={stat.key}>
+                          <strong>{stat.home ?? '-'}</strong>
+                          <span>
+                            <b>{stat.label}</b>
+                            <i>
+                              <em style={{ width: `${homeShare}%` }} />
+                            </i>
+                          </span>
+                          <strong>{stat.away ?? '-'}</strong>
+                        </div>
+                      )
+                    })}
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <PendingPanel title="Statistics begin at kickoff">
+                Possession, xG, attempts, passing, defending, discipline and
+                physical data will populate from FIFA's live feed.
+              </PendingPanel>
+            )
           ) : null}
 
           {activeTab === 'lineups' && details ? (
-            <div className="match-lineups">
-              <TeamLineup team={details.home} />
-              <TeamLineup team={details.away} />
-            </div>
+            details.home.starters.length || details.away.starters.length ? (
+              <div className="match-lineups">
+                <TeamLineup notebookTeam={homeTeam} team={details.home} />
+                <TeamLineup notebookTeam={awayTeam} team={details.away} />
+              </div>
+            ) : (
+              <PendingPanel title="Starting XIs not announced yet">
+                Formations, coaches, starters and substitutes will appear here
+                as soon as FIFA publishes the official team sheets.
+              </PendingPanel>
+            )
           ) : null}
 
           {activeTab === 'community' ? (
             <CommunityPredictions
               currentUserId={currentUserId}
               error={community.error}
-              fixture={fixture}
+              fixture={communityFixture}
               loading={community.loading}
               match={match}
               rows={community.rows}
@@ -543,8 +777,11 @@ export function MatchDetailsDialog({
         </div>
 
         <footer className="match-details-footer">
-          <span>Official FIFA data - refreshed when this match is opened</span>
-          <a href={fifaMatchCentreUrl(match)} rel="noreferrer" target="_blank">
+          <span>
+            Official FIFA data
+            {finalExperience ? ' - automatically refreshed every 45 seconds' : ' - refreshed when this match is opened'}
+          </span>
+          <a href={fifaMatchCentreUrl(match, details)} rel="noreferrer" target="_blank">
             Open FIFA match centre
           </a>
         </footer>
