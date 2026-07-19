@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { FINAL_STREAM } from '../data/finalExperience'
 import { TEAMS } from '../data/tournament'
 import {
   fetchMatchDetails,
   fifaMatchCentreUrl,
 } from '../lib/matchDetails'
 import { supabase } from '../lib/supabase'
+import { Icon } from './Icons'
 import { TeamName } from './TeamName'
 
 const STANDARD_TABS = [
@@ -475,6 +477,8 @@ export function MatchDetailsDialog({
   const awayName = awayTeam?.name ?? details?.away.name ?? 'TBD'
   const homeScore = details?.home.score ?? match.home_score
   const awayScore = details?.away.score ?? match.away_score
+  const finalStreamAvailable = finalExperience
+    && (details?.status ?? match.status) !== 'finished'
   const source = match.source_payload ?? {}
   const stadium = details?.stadium ?? source.stadium
   const city = details?.city ?? source.city
@@ -537,6 +541,22 @@ export function MatchDetailsDialog({
           <p id="match-details-title">
             {stadium ? `${stadium}${city ? `, ${city}` : ''}` : formatDate(match.kickoff_at)}
           </p>
+          {finalStreamAvailable ? (
+            <a
+              aria-label="Watch Spain vs Argentina live free on tapmad"
+              className="final-stream-banner"
+              href={FINAL_STREAM.url}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <Icon name="play" size={15} />
+              <span>
+                <b>{FINAL_STREAM.label}</b>
+                <small>Spain vs Argentina on {FINAL_STREAM.provider}</small>
+              </span>
+              <strong>Watch now</strong>
+            </a>
+          ) : null}
         </header>
 
         <nav

@@ -205,9 +205,6 @@ function App() {
   const thirdPlaceFixture = knockoutFixtures.find(
     (fixture) => fixture.roundLabel === 'Third place',
   )
-  const finalistsReady = [finalFixture?.homeId, finalFixture?.awayId].filter(
-    Boolean,
-  ).length
   const liveKnockoutCount = knockoutFixtures.filter(
     (fixture) => fixture.match?.status === 'live',
   ).length
@@ -215,10 +212,9 @@ function App() {
     (prediction) =>
       Number.isInteger(prediction.home) && Number.isInteger(prediction.away),
   ).length
-  const finalPicksCount = [103, 104].filter((matchId) => {
-    const prediction = backend.knockoutPredictions[matchId]
-    return Number.isInteger(prediction?.home) && Number.isInteger(prediction?.away)
-  }).length
+  const finalPrediction = backend.knockoutPredictions[104]
+  const finalPickReady = Number.isInteger(finalPrediction?.home)
+    && Number.isInteger(finalPrediction?.away)
   const archiveFixtures = useMemo(
     () => [
       ...fixtureSchedule.map((fixture) => ({
@@ -605,35 +601,31 @@ function App() {
 
               <section
                 className="knockout-command-strip"
-                aria-label="Final weekend snapshot"
+                aria-label="Final countdown snapshot"
               >
                 <article className="command-card command-card-primary">
                   <span>Now watching</span>
-                  <strong>Final weekend</strong>
-                  <small>the trophy and bronze are still on the line</small>
+                  <strong>The final</strong>
+                  <small>Spain, Argentina and one last page to write</small>
                 </article>
                 <article className="command-card">
-                  <span>Finalists</span>
-                  <strong>{finalistsReady}/2</strong>
-                  <small>
-                    {finalistsReady === 2
-                      ? 'Spain and Argentina'
-                      : 'still unfolding'}
-                  </small>
+                  <span>Match</span>
+                  <strong>104</strong>
+                  <small>Spain vs Argentina for the trophy</small>
                 </article>
                 <article className="command-card">
                   <span>Matches left</span>
                   <strong>{upcomingKnockoutFixtures.length}</strong>
-                  <small>before the notebook closes</small>
+                  <small>the biggest one</small>
                 </article>
                 <article className="command-card">
                   <span>Live pulse</span>
                   <strong>{liveKnockoutCount}</strong>
-                  <small>matches live right now</small>
+                  <small>Match Centre follows every moment</small>
                 </article>
                 <article className="command-card command-card-accent">
-                  <span>My last picks</span>
-                  <strong>{finalPicksCount}/2</strong>
+                  <span>My final pick</span>
+                  <strong>{finalPickReady ? 'Ready' : 'Open'}</strong>
                   <small>{pickedKnockoutCount} knockout scorelines overall</small>
                 </article>
               </section>

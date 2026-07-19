@@ -38,6 +38,7 @@ export function Icon({ name, size = 18 }) {
         <path d="M8 6H5v1c0 2 1 3 3 3M16 6h3v1c0 2-1 3-3 3M12 13v4M8 20h8M9 17h6" />
       </>
     ),
+    play: <path d="m9 7 8 5-8 5z" />,
     chevron: <path d="m9 18 6-6-6-6" />,
   }
 

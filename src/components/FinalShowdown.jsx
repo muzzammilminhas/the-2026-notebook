@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { FINAL_STREAM } from '../data/finalExperience'
 import { TEAMS } from '../data/tournament'
+import { Icon } from './Icons'
 import { TeamName } from './TeamName'
 
 function formatKickoff(value) {
@@ -58,7 +60,7 @@ function FixtureButton({ fixture, mode, onOpenMatch }) {
       {finished
         ? isFinal
           ? 'Relive final'
-          : 'Relive match'
+          : 'See result'
         : mode === 'whatif'
           ? 'Set scoreline'
           : isFinal
@@ -88,13 +90,17 @@ export function FinalShowdown({
   const thirdReady = Boolean(
     thirdPlaceFixture?.homeId && thirdPlaceFixture?.awayId,
   )
+  const thirdFinished = thirdMatch?.status === 'finished'
+  const thirdTotalGoals = thirdFinished
+    ? Number(thirdMatch.home_score) + Number(thirdMatch.away_score)
+    : null
 
   return (
     <section className="final-showdown" aria-labelledby="final-showdown-title">
       <header className="final-showdown-topline">
         <div>
           <span>{mode === 'whatif' ? 'My tournament ending' : 'The last page'}</span>
-          <strong>{finalReady ? 'Finalists confirmed' : 'Final path unfolding'}</strong>
+          <strong>{finalReady ? 'One match remains' : 'Final path unfolding'}</strong>
         </div>
         <div className="final-mode-switch" aria-label="Knockout mode">
           <button
@@ -117,7 +123,7 @@ export function FinalShowdown({
       <div className="final-showdown-title">
         <span>Match 104</span>
         <h2 id="final-showdown-title">Final showdown</h2>
-        <p>Two champions. One last prediction. One name left to write.</p>
+        <p>Europe's champions. The defending champions. One trophy left.</p>
       </div>
 
       <div className="final-matchup">
@@ -136,14 +142,30 @@ export function FinalShowdown({
         <time dateTime={finalMatch?.kickoff_at}>
           {formatKickoff(finalMatch?.kickoff_at)}
         </time>
-        <FixtureButton fixture={finalFixture} mode={mode} onOpenMatch={onOpenMatch} />
+        <div className="final-showdown-buttons">
+          <FixtureButton
+            fixture={finalFixture}
+            mode={mode}
+            onOpenMatch={onOpenMatch}
+          />
+          {finalMatch?.status !== 'finished' ? (
+            <a href={FINAL_STREAM.url} rel="noreferrer" target="_blank">
+              <Icon name="play" size={13} />
+              {FINAL_STREAM.label}
+            </a>
+          ) : null}
+        </div>
       </div>
 
       <div className="bronze-undercard">
         <div>
           <span>Match 103</span>
-          <strong>Bronze final</strong>
-          <small>{countdownLabel(thirdMatch?.kickoff_at, thirdMatch?.status)}</small>
+          <strong>{thirdFinished ? 'Bronze decided' : 'Bronze final'}</strong>
+          <small>
+            {thirdFinished
+              ? 'England finish third'
+              : countdownLabel(thirdMatch?.kickoff_at, thirdMatch?.status)}
+          </small>
         </div>
         <div className="bronze-teams">
           <strong>
@@ -153,7 +175,11 @@ export function FinalShowdown({
               'To be decided'
             )}
           </strong>
-          <span>vs</span>
+          <span>
+            {thirdFinished
+              ? `${thirdMatch.home_score} : ${thirdMatch.away_score}`
+              : 'vs'}
+          </span>
           <strong>
             {thirdReady ? (
               <TeamName team={TEAMS[thirdPlaceFixture.awayId]} />
@@ -161,6 +187,12 @@ export function FinalShowdown({
               'To be decided'
             )}
           </strong>
+          {thirdFinished ? (
+            <small className="bronze-record-note">
+              {thirdTotalGoals}-goal classic - Saka hat-trick - Mbappe's record 22
+              World Cup goals
+            </small>
+          ) : null}
         </div>
         <time dateTime={thirdMatch?.kickoff_at}>
           {formatKickoff(thirdMatch?.kickoff_at)}

@@ -231,7 +231,7 @@ export function TimeCapsule({
               ? 'Complete'
               : finalFinished
                 ? 'Checking'
-                : 'Final weekend'
+                : 'Final countdown'
           }
         />
       </section>

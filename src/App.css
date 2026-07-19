@@ -2833,6 +2833,50 @@ td:nth-child(2) small {
   color: rgba(255, 255, 255, 0.58);
 }
 
+.final-stream-banner {
+  width: min(390px, 100%);
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin: 14px auto 0;
+  padding: 8px 10px 8px 13px;
+  color: white;
+  background: #bb343b;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  text-decoration: none;
+  box-shadow: 0 10px 24px rgba(4, 12, 25, 0.24);
+}
+
+.final-stream-banner > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.final-stream-banner b {
+  font-size: 11px;
+}
+
+.final-stream-banner small {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.final-stream-banner > strong {
+  padding: 7px 9px;
+  color: #14233b;
+  background: #f3c966;
+  border-radius: 4px;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
 .match-overview {
   display: grid;
   gap: 18px;
@@ -4872,6 +4916,12 @@ td:nth-child(2) small {
   padding: 4px 0 18px;
 }
 
+.final-showdown-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .final-showdown-action time,
 .bronze-undercard time {
   color: #ccd6e3;
@@ -4880,6 +4930,7 @@ td:nth-child(2) small {
 }
 
 .final-showdown-action button,
+.final-showdown-buttons > a,
 .bronze-undercard > button {
   min-height: 32px;
   padding: 7px 12px;
@@ -4890,6 +4941,21 @@ td:nth-child(2) small {
   cursor: pointer;
   font-size: 9px;
   font-weight: 900;
+}
+
+.final-showdown-buttons > a {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  color: white;
+  background: #bb343b;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 900;
+  text-decoration: none;
 }
 
 .bronze-undercard {
@@ -4947,6 +5013,14 @@ td:nth-child(2) small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.bronze-record-note {
+  grid-column: 1 / -1;
+  color: #cbd3dd;
+  font-size: 8px;
+  line-height: 1.35;
+  text-align: center;
 }
 
 @keyframes live-pulse {
@@ -5814,6 +5888,16 @@ td:nth-child(2) small {
 
   .final-showdown-action button {
     min-height: 38px;
+  }
+
+  .final-showdown-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .final-showdown-buttons > a {
+    min-height: 38px;
+    justify-content: center;
   }
 
   .bronze-undercard {
