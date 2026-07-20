@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { getMatchHighlight } from '../data/matchHighlights'
 import { TEAMS } from '../data/tournament'
+import { supabase } from '../lib/supabase'
 import { TeamName } from './TeamName'
 
 function ordinal(value) {
@@ -88,6 +90,16 @@ function MomentRow({ fixture, label, note }) {
   )
 }
 
+function PodiumTeam({ place, team, note }) {
+  return (
+    <article className={`tournament-podium-team rank-${place}`}>
+      <span>{ordinal(place)}</span>
+      <strong>{team ? <TeamName team={team} /> : 'Not available'}</strong>
+      <small>{note}</small>
+    </article>
+  )
+}
+
 export function TimeCapsule({
   championId,
   currentUserId,
@@ -96,6 +108,7 @@ export function TimeCapsule({
   profile,
   scoreSummary,
 }) {
+  const [finalPicks, setFinalPicks] = useState([])
   const currentRank =
     leaderboard.findIndex((row) => row.user_id === currentUserId) + 1
   const currentRow = currentRank ? leaderboard[currentRank - 1] : null
@@ -114,6 +127,15 @@ export function TimeCapsule({
   const finalFinished = finalFixture?.match?.status === 'finished'
   const finalHome = finalFixture?.homeId ? TEAMS[finalFixture.homeId] : null
   const finalAway = finalFixture?.awayId ? TEAMS[finalFixture.awayId] : null
+  const runnerUp = finalFixture?.match?.winner_team_id === finalFixture?.homeId
+    ? finalAway
+    : finalHome
+  const thirdPlaceFixture = fixtures.find(
+    (fixture) => fixture.match?.match_number === 103,
+  )
+  const thirdPlaceTeam = thirdPlaceFixture?.match?.winner_team_id
+    ? TEAMS[thirdPlaceFixture.match.winner_team_id]
+    : null
   const remainingMatches = fixtures.length - finishedMatches.length
   const highlightCount = fixtures.filter((fixture) =>
     getMatchHighlight(fixture.match),
@@ -137,6 +159,41 @@ export function TimeCapsule({
   const exactLeader = topBy(leaderboard, 'exact_scores')
   const knockoutLeader = topBy(leaderboard, 'correct_knockout')
   const championLeader = leaderboard[0]
+  const championPicks = finalPicks.filter(
+    (pick) => pick.predicted_winner_team_id === championId,
+  )
+  const runnerUpPicks = finalPicks.filter(
+    (pick) => pick.predicted_winner_team_id === runnerUp?.id,
+  )
+  const championPickPercent = finalPicks.length
+    ? Math.round((championPicks.length / finalPicks.length) * 100)
+    : 0
+  const popularFinalScore = Object.entries(
+    finalPicks.reduce((scores, pick) => {
+      const score = `${pick.predicted_home}-${pick.predicted_away}`
+      scores[score] = (scores[score] ?? 0) + 1
+      return scores
+    }, {}),
+  ).sort((left, right) => right[1] - left[1])[0]?.[0]
+
+  useEffect(() => {
+    if (!tournamentComplete) return undefined
+    let cancelled = false
+
+    async function loadFinalPicks() {
+      const { data } = await supabase
+        .from('community_knockout_predictions')
+        .select('*')
+        .eq('match_number', 104)
+        .order('submitted_at', { ascending: true })
+      if (!cancelled) setFinalPicks(data ?? [])
+    }
+
+    loadFinalPicks()
+    return () => {
+      cancelled = true
+    }
+  }, [tournamentComplete])
 
   return (
     <div className="capsule-view">
@@ -193,13 +250,31 @@ export function TimeCapsule({
               'Still unwritten'
             )}
           </strong>
+          {tournamentComplete ? (
+            <b>
+              {finalFixture.match.home_score}-{finalFixture.match.away_score}
+              <em>after extra time</em>
+            </b>
+          ) : null}
           <small>
             {tournamentComplete
-              ? 'The last verified result has sealed the tournament archive.'
+              ? "Ferran Torres wrote the winning goal in the 106th minute. Spain's second star is official."
               : 'The champion memory locks here after the final whistle.'}
           </small>
         </article>
       </section>
+
+      {tournamentComplete ? (
+        <section className="tournament-podium" aria-label="Tournament podium">
+          <PodiumTeam
+            note="World champions"
+            place={1}
+            team={champion}
+          />
+          <PodiumTeam note="Runners-up" place={2} team={runnerUp} />
+          <PodiumTeam note="Bronze medal" place={3} team={thirdPlaceTeam} />
+        </section>
+      ) : null}
 
       <section className="capsule-metrics">
         <CapsuleMetric
@@ -209,8 +284,8 @@ export function TimeCapsule({
         />
         <CapsuleMetric
           label="Highlights"
-          note="official videos as available"
-          value={highlightCount}
+          note="complete tapmad archive"
+          value={`${highlightCount}/${fixtures.length}`}
         />
         <CapsuleMetric
           label="Leaderboard entries"
@@ -293,16 +368,53 @@ export function TimeCapsule({
           </div>
         </article>
 
-        <article className="capsule-panel journey-panel">
+        <article className="capsule-panel community-panel">
           <header>
-            <span>Tournament journey</span>
-            <h3>From first pick to final whistle</h3>
+            <span>Community final call</span>
+            <h3>
+              {finalPicks.length
+                ? `${championPicks.length} of ${finalPicks.length} backed the champions`
+                : 'The final vote is loading'}
+            </h3>
           </header>
-          <p>
-            Follow the full path from group-stage picks to knockout pressure,
-            final rankings, archived highlights, and the memories that shaped
-            the tournament.
-          </p>
+          <div className="community-final-story">
+            <div className="community-final-vote">
+              <span>
+                <TeamName team={champion} />
+                <strong>{championPicks.length}</strong>
+              </span>
+              <i>
+                <b style={{ width: `${championPickPercent}%` }} />
+              </i>
+              <span>
+                <TeamName team={runnerUp} />
+                <strong>{runnerUpPicks.length}</strong>
+              </span>
+            </div>
+            <div>
+              <span>Community favourite</span>
+              <strong>
+                {runnerUpPicks.length > championPicks.length
+                  ? runnerUp?.name
+                  : champion?.name ?? '-'}
+              </strong>
+              <small>The majority call did not win the trophy.</small>
+            </div>
+            <div>
+              <span>Popular prediction</span>
+              <strong>{popularFinalScore ?? '-'}</strong>
+              <small>The final stayed goalless for 105 minutes.</small>
+            </div>
+            <div>
+              <span>Correct final calls</span>
+              <strong>{championPicks.length}</strong>
+              <small>
+                {championPicks.length
+                  ? championPicks.map((pick) => pick.nickname).join(' and ')
+                  : 'No correct picks recorded'}
+              </small>
+            </div>
+          </div>
         </article>
       </section>
     </div>

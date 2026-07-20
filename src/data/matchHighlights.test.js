@@ -6,17 +6,18 @@ import {
 } from './matchHighlights'
 
 describe('match highlights archive', () => {
-  it('includes every completed match with a verified Tapmad upload', () => {
+  it('includes a verified Tapmad highlight for all 104 matches', () => {
     const matchNumbers = Object.keys(MATCH_HIGHLIGHTS).map(Number)
     const missingFinishedMatches = Array.from(
-      { length: 102 },
+      { length: 104 },
       (_, index) => index + 1,
     ).filter((matchNumber) => !matchNumbers.includes(matchNumber))
 
-    expect(matchNumbers).toHaveLength(101)
-    expect(missingFinishedMatches).toEqual([51])
-    expect(MATCH_HIGHLIGHTS[103]).toBeUndefined()
-    expect(MATCH_HIGHLIGHTS[104]).toBeUndefined()
+    expect(matchNumbers).toHaveLength(104)
+    expect(missingFinishedMatches).toEqual([])
+    expect(MATCH_HIGHLIGHTS[51].format).toBe('Short highlights')
+    expect(MATCH_HIGHLIGHTS[103].youtubeUrl).toContain('VoZG0cWoNh0')
+    expect(MATCH_HIGHLIGHTS[104].youtubeUrl).toContain('Vb-48HGNIwg')
   })
 
   it('builds Tapmad links, titles, thumbnails and privacy-enhanced embeds', () => {
@@ -27,6 +28,7 @@ describe('match highlights archive', () => {
     })
 
     expect(highlight.source).toBe('tapmad')
+    expect(highlight.format).toBe('Full highlights')
     expect(highlight.title).toBe('France vs Spain | Full highlights')
     expect(highlight.youtubeUrl).toBe(
       'https://www.youtube.com/watch?v=Ho_u5uaCH40',

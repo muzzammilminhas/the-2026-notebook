@@ -65,7 +65,7 @@ export function HighlightsDialog({ fixture, onClose }) {
             <span className="highlight-video-action">
               <i aria-hidden="true" />
               <span>
-                <small>Full match highlights</small>
+                <small>{highlight.format}</small>
                 <strong>Watch on YouTube</strong>
               </span>
             </span>

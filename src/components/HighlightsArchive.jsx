@@ -44,11 +44,16 @@ function searchableText(fixture) {
 function HighlightCard({ fixture, onOpenHighlights }) {
   const status = highlightStatus(fixture.match)
   const highlight = getMatchHighlight(fixture.match)
+  const matchNumber = Number(fixture.match?.match_number ?? fixture.id)
   const homeTeam = fixture.homeId ? TEAMS[fixture.homeId] : null
   const awayTeam = fixture.awayId ? TEAMS[fixture.awayId] : null
 
   return (
-    <article className={`highlight-card ${status}`}>
+    <article
+      className={`highlight-card ${status} ${
+        matchNumber === 104 ? 'championship-highlight' : ''
+      }`}
+    >
       <div className="highlight-card-meta">
         <span>M{fixture.match?.match_number ?? fixture.id}</span>
         <strong>{stageLabel(fixture)}</strong>
@@ -68,7 +73,7 @@ function HighlightCard({ fixture, onOpenHighlights }) {
       <div className="highlight-card-action">
         <span>
           {status === 'ready'
-            ? highlight.source
+            ? `${highlight.source} - ${highlight.format}`
             : status === 'coming-soon'
               ? 'Highlights coming soon'
               : 'Match not finished'}
@@ -103,7 +108,13 @@ export function HighlightsArchive({ fixtures, onOpenHighlights }) {
 
   const visibleFixtures = useMemo(() => {
     const search = query.trim().toLowerCase()
-    return fixtures.filter((fixture) => {
+    return [...fixtures]
+      .sort(
+        (left, right) =>
+          Number(right.match?.match_number ?? right.id)
+          - Number(left.match?.match_number ?? left.id),
+      )
+      .filter((fixture) => {
       if (filter === 'ready' && !getMatchHighlight(fixture.match)) return false
       if (filter === 'finished' && fixture.match?.status !== 'finished') {
         return false
@@ -112,7 +123,7 @@ export function HighlightsArchive({ fixtures, onOpenHighlights }) {
       if (filter === 'group' && fixture.stage !== 'group') return false
       if (search && !searchableText(fixture).includes(search)) return false
       return true
-    })
+      })
   }, [filter, fixtures, query])
 
   return (
@@ -122,8 +133,8 @@ export function HighlightsArchive({ fixtures, onOpenHighlights }) {
           <span className="hand-note">Match library</span>
           <h2>Highlights archive</h2>
           <p>
-            Revisit finished matches from one place. Full highlights are linked
-            from tapmad on YouTube as verified uploads become available.
+            All 104 matches, from the opening game to Spain lifting the trophy.
+            Every highlight links to a verified tapmad upload on YouTube.
           </p>
         </div>
       </section>
@@ -138,7 +149,7 @@ export function HighlightsArchive({ fixtures, onOpenHighlights }) {
           <strong>{stats.finished}</strong>
         </article>
         <article>
-          <span>Highlights ready</span>
+          <span>Archive coverage</span>
           <strong>{stats.ready}</strong>
         </article>
       </section>

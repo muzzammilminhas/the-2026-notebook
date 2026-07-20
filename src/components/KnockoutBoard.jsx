@@ -104,10 +104,10 @@ export function KnockoutBoard({
       ) : null}
 
       <div className="route-note">
-        <strong>Official third-place routing:</strong>
+        <strong>Qualified third-place groups:</strong>
         <span>{qualifiedThirds || 'Awaiting group standings'}</span>
         <small>
-          Annex C pairing is calculated only from a complete group table.
+          Round of 32 Annex C pairing calculated from the final group table.
         </small>
         {isWhatIf && allowDirectPicks ? (
           <button

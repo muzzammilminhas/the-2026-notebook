@@ -19,6 +19,7 @@ export function AppHeader({
   onSignIn,
   onSignOut,
   scoreSummary,
+  tournamentComplete,
   backendStatus,
   user,
   isAdmin,
@@ -29,7 +30,9 @@ export function AppHeader({
     profile?.favorite_team_id ?? '',
   )
   const brandSubtitle =
-    section === 'knockout' || section === 'bracket'
+    tournamentComplete
+      ? 'Spain crowned, 104 matches archived & every path preserved'
+      : section === 'knockout' || section === 'bracket'
       ? 'Final showdown, predictions & the road to the trophy'
       : section === 'highlights' || section === 'capsule'
         ? 'Highlights, report cards & the final archive'
@@ -82,8 +85,12 @@ export function AppHeader({
           <button className="profile-button sign-in-button" onClick={onSignIn} type="button">
             <span className="status-dot" />
             <span>
-              <small>Save your predictions</small>
-              <strong>Sign in or create account</strong>
+              <small>
+                {tournamentComplete ? 'Open your report card' : 'Save your predictions'}
+              </small>
+              <strong>
+                {tournamentComplete ? 'Sign in to revisit your run' : 'Sign in or create account'}
+              </strong>
             </span>
           </button>
         ) : editing ? (

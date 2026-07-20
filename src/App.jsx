@@ -15,6 +15,8 @@ import { MatchDetailsDialog } from './components/MatchDetailsDialog'
 import { ScenarioStandingsPanel } from './components/ScenarioStandingsPanel'
 import { TimeCapsule } from './components/TimeCapsule'
 import { TournamentStandings } from './components/TournamentStandings'
+import { getMatchHighlight } from './data/matchHighlights'
+import { TEAMS } from './data/tournament'
 import {
   buildPredictionScores,
   useWorldCupBackend,
@@ -54,7 +56,7 @@ function App() {
     return hash === 'whatif' ? 'whatif' : 'actual'
   })
   const [knockoutMode, setKnockoutMode] = useState('official')
-  const [knockoutMatchTab, setKnockoutMatchTab] = useState('upcoming')
+  const [knockoutMatchTab, setKnockoutMatchTab] = useState('completed')
   const [scenarioGroup, setScenarioGroup] = useState('A')
   const [fixtureFilters, setFixtureFilters] = useState({
     team: '',
@@ -199,10 +201,10 @@ function App() {
     knockoutMatchTab === 'completed'
       ? completedKnockoutFixtures
       : upcomingKnockoutFixtures
-  const finalFixture = knockoutFixtures.find(
+  const finalFixture = officialKnockoutFixtures.find(
     (fixture) => fixture.roundLabel === 'Final',
   )
-  const thirdPlaceFixture = knockoutFixtures.find(
+  const thirdPlaceFixture = officialKnockoutFixtures.find(
     (fixture) => fixture.roundLabel === 'Third place',
   )
   const liveKnockoutCount = knockoutFixtures.filter(
@@ -213,8 +215,6 @@ function App() {
       Number.isInteger(prediction.home) && Number.isInteger(prediction.away),
   ).length
   const finalPrediction = backend.knockoutPredictions[104]
-  const finalPickReady = Number.isInteger(finalPrediction?.home)
-    && Number.isInteger(finalPrediction?.away)
   const archiveFixtures = useMemo(
     () => [
       ...fixtureSchedule.map((fixture) => ({
@@ -226,6 +226,24 @@ function App() {
     ],
     [fixtureSchedule, officialKnockoutFixtures],
   )
+  const tournamentComplete = Boolean(
+    finalFixture?.match?.status === 'finished'
+      && finalFixture.match.verified
+      && finalFixture.match.winner_team_id,
+  )
+  const champion = tournamentComplete
+    ? TEAMS[finalFixture.match.winner_team_id]
+    : null
+  const readyHighlightCount = archiveFixtures.filter((fixture) =>
+    getMatchHighlight(fixture.match),
+  ).length
+  const finalPickResult = !backend.user
+    ? 'Sign in'
+    : !finalPrediction
+      ? 'No pick'
+      : finalPrediction.grade === 'wrong'
+        ? 'Missed'
+        : `+${finalPrediction.points ?? 0}`
 
   function showNotice(message) {
     setNotice(message)
@@ -239,10 +257,7 @@ function App() {
   }
 
   function focusKnockoutFixture(fixture) {
-    if (
-      knockoutMode === 'official'
-      && Number(fixture.match?.match_number) === 104
-    ) {
+    if (Number(fixture.match?.match_number) === 104) {
       setSelectedFixture(fixture)
       return
     }
@@ -449,6 +464,9 @@ function App() {
   const completedCount = Object.values(backend.matchMeta).filter(
     (match) => match.stage === 'group' && match.status === 'finished',
   ).length
+  const verifiedCount = Object.values(backend.matchMeta).filter(
+    (match) => match.status === 'finished' && match.verified,
+  ).length
   const syncText = backend.error
     ? 'Live feed unavailable'
     : backend.lastUpdated
@@ -484,13 +502,18 @@ function App() {
         profile={backend.profile}
         scoreSummary={backend.scoreSummary}
         section={section}
+        tournamentComplete={tournamentComplete}
         user={backend.user}
       />
 
       <div className="workspace">
         <main className="paper" aria-live="polite">
           <div className="paper-meta">
-            <span>{completedCount}/72 official group results</span>
+            <span>
+              {tournamentComplete
+                ? `${verifiedCount}/104 verified tournament results`
+                : `${completedCount}/72 official group results`}
+            </span>
             <span className={backend.error ? 'feed-error' : ''}>
               {syncText}
             </span>
@@ -595,39 +618,76 @@ function App() {
                 finalFixture={finalFixture}
                 mode={knockoutMode}
                 onModeChange={setKnockoutMode}
+                onOpenHighlights={setSelectedHighlight}
                 onOpenMatch={focusKnockoutFixture}
                 thirdPlaceFixture={thirdPlaceFixture}
               />
 
               <section
                 className="knockout-command-strip"
-                aria-label="Final countdown snapshot"
+                aria-label={
+                  tournamentComplete
+                    ? 'Completed tournament snapshot'
+                    : 'Final countdown snapshot'
+                }
               >
-                <article className="command-card command-card-primary">
-                  <span>Now watching</span>
-                  <strong>The final</strong>
-                  <small>Spain, Argentina and one last page to write</small>
-                </article>
-                <article className="command-card">
-                  <span>Match</span>
-                  <strong>104</strong>
-                  <small>Spain vs Argentina for the trophy</small>
-                </article>
-                <article className="command-card">
-                  <span>Matches left</span>
-                  <strong>{upcomingKnockoutFixtures.length}</strong>
-                  <small>the biggest one</small>
-                </article>
-                <article className="command-card">
-                  <span>Live pulse</span>
-                  <strong>{liveKnockoutCount}</strong>
-                  <small>Match Centre follows every moment</small>
-                </article>
-                <article className="command-card command-card-accent">
-                  <span>My final pick</span>
-                  <strong>{finalPickReady ? 'Ready' : 'Open'}</strong>
-                  <small>{pickedKnockoutCount} knockout scorelines overall</small>
-                </article>
+                {tournamentComplete ? (
+                  <>
+                    <article className="command-card command-card-primary">
+                      <span>World champions</span>
+                      <strong>{champion?.name ?? 'Spain'}</strong>
+                      <small>the second star belongs to La Roja</small>
+                    </article>
+                    <article className="command-card">
+                      <span>Final</span>
+                      <strong>1-0</strong>
+                      <small>Ferran Torres, 106 minutes</small>
+                    </article>
+                    <article className="command-card">
+                      <span>Verified results</span>
+                      <strong>{verifiedCount}</strong>
+                      <small>every match sealed by the FIFA feed</small>
+                    </article>
+                    <article className="command-card">
+                      <span>Highlights</span>
+                      <strong>{readyHighlightCount}</strong>
+                      <small>complete tapmad tournament archive</small>
+                    </article>
+                    <article className="command-card command-card-accent">
+                      <span>My final call</span>
+                      <strong>{finalPickResult}</strong>
+                      <small>{pickedKnockoutCount} knockout scorelines overall</small>
+                    </article>
+                  </>
+                ) : (
+                  <>
+                    <article className="command-card command-card-primary">
+                      <span>Now watching</span>
+                      <strong>The final</strong>
+                      <small>Spain, Argentina and one last page to write</small>
+                    </article>
+                    <article className="command-card">
+                      <span>Match</span>
+                      <strong>104</strong>
+                      <small>Spain vs Argentina for the trophy</small>
+                    </article>
+                    <article className="command-card">
+                      <span>Matches left</span>
+                      <strong>{upcomingKnockoutFixtures.length}</strong>
+                      <small>the biggest one</small>
+                    </article>
+                    <article className="command-card">
+                      <span>Live pulse</span>
+                      <strong>{liveKnockoutCount}</strong>
+                      <small>Match Centre follows every moment</small>
+                    </article>
+                    <article className="command-card command-card-accent">
+                      <span>My final pick</span>
+                      <strong>Open</strong>
+                      <small>{pickedKnockoutCount} knockout scorelines overall</small>
+                    </article>
+                  </>
+                )}
               </section>
 
               <section className="knockout-feed-section">

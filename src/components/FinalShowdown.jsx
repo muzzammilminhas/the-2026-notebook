@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { FINAL_STREAM } from '../data/finalExperience'
+import { getMatchHighlight } from '../data/matchHighlights'
 import { TEAMS } from '../data/tournament'
 import { Icon } from './Icons'
 import { TeamName } from './TeamName'
@@ -74,6 +75,7 @@ export function FinalShowdown({
   finalFixture,
   mode,
   onModeChange,
+  onOpenHighlights,
   onOpenMatch,
   thirdPlaceFixture,
 }) {
@@ -86,6 +88,11 @@ export function FinalShowdown({
 
   const finalMatch = finalFixture?.match
   const thirdMatch = thirdPlaceFixture?.match
+  const finalFinished = finalMatch?.status === 'finished'
+  const finalHighlight = getMatchHighlight(finalMatch)
+  const champion = finalMatch?.winner_team_id
+    ? TEAMS[finalMatch.winner_team_id]
+    : null
   const finalReady = Boolean(finalFixture?.homeId && finalFixture?.awayId)
   const thirdReady = Boolean(
     thirdPlaceFixture?.homeId && thirdPlaceFixture?.awayId,
@@ -99,8 +106,20 @@ export function FinalShowdown({
     <section className="final-showdown" aria-labelledby="final-showdown-title">
       <header className="final-showdown-topline">
         <div>
-          <span>{mode === 'whatif' ? 'My tournament ending' : 'The last page'}</span>
-          <strong>{finalReady ? 'One match remains' : 'Final path unfolding'}</strong>
+          <span>
+            {finalFinished
+              ? 'Tournament archive'
+              : mode === 'whatif'
+                ? 'My tournament ending'
+                : 'The last page'}
+          </span>
+          <strong>
+            {finalFinished
+              ? `${champion?.name ?? 'The winner'} are world champions`
+              : finalReady
+                ? 'One match remains'
+                : 'Final path unfolding'}
+          </strong>
         </div>
         <div className="final-mode-switch" aria-label="Knockout mode">
           <button
@@ -122,20 +141,40 @@ export function FinalShowdown({
 
       <div className="final-showdown-title">
         <span>Match 104</span>
-        <h2 id="final-showdown-title">Final showdown</h2>
-        <p>Europe's champions. The defending champions. One trophy left.</p>
+        <h2 id="final-showdown-title">
+          {finalFinished ? 'Champions of the world' : 'Final showdown'}
+        </h2>
+        <p>
+          {finalFinished
+            ? "Spain's second star, sealed by Ferran Torres in the 106th minute."
+            : "Europe's champions. The defending champions. One trophy left."}
+        </p>
       </div>
 
       <div className="final-matchup">
-        <TeamSide align="home" label="European champions" teamId={finalFixture?.homeId} />
+        <TeamSide
+          align="home"
+          label={finalFinished ? 'World champions' : 'European champions'}
+          teamId={finalFixture?.homeId}
+        />
         <div className="final-versus">
-          <span>For the trophy</span>
-          <strong>VS</strong>
+          <span>{finalFinished ? 'After extra time' : 'For the trophy'}</span>
+          <strong>
+            {finalFinished
+              ? `${finalMatch.home_score}-${finalMatch.away_score}`
+              : 'VS'}
+          </strong>
           <small>
-            {countdownLabel(finalMatch?.kickoff_at, finalMatch?.status)}
+            {finalFinished
+              ? "Ferran Torres 106'"
+              : countdownLabel(finalMatch?.kickoff_at, finalMatch?.status)}
           </small>
         </div>
-        <TeamSide align="away" label="Defending champions" teamId={finalFixture?.awayId} />
+        <TeamSide
+          align="away"
+          label={finalFinished ? 'Runners-up' : 'Defending champions'}
+          teamId={finalFixture?.awayId}
+        />
       </div>
 
       <div className="final-showdown-action">
@@ -153,6 +192,15 @@ export function FinalShowdown({
               <Icon name="play" size={13} />
               {FINAL_STREAM.label}
             </a>
+          ) : finalHighlight ? (
+            <button
+              className="final-highlights-button"
+              onClick={() => onOpenHighlights(finalFixture)}
+              type="button"
+            >
+              <Icon name="play" size={13} />
+              Watch final highlights
+            </button>
           ) : null}
         </div>
       </div>

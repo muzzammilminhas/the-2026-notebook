@@ -4180,6 +4180,20 @@ td:nth-child(2) small {
   background: #d89928;
 }
 
+.highlight-card.championship-highlight {
+  background:
+    linear-gradient(135deg, rgba(240, 195, 90, 0.2), transparent 54%),
+    rgba(255, 255, 255, 0.62);
+  border-color: rgba(174, 128, 25, 0.42);
+  box-shadow:
+    inset 0 0 0 1px rgba(240, 195, 90, 0.14),
+    0 14px 30px rgba(43, 48, 44, 0.12);
+}
+
+.highlight-card.championship-highlight::before {
+  background: #d0a52f;
+}
+
 .highlight-card-meta,
 .highlight-card-action {
   display: flex;
@@ -4572,6 +4586,85 @@ td:nth-child(2) small {
   line-height: 1.5;
 }
 
+.champion-memory > b {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 9px;
+  color: var(--navy);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 42px;
+  font-weight: 560;
+}
+
+.champion-memory > b em {
+  color: #7a817d;
+  font-family: Arial, sans-serif;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tournament-podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: -8px 0 22px;
+}
+
+.tournament-podium-team {
+  min-width: 0;
+  min-height: 88px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  gap: 4px 11px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(31, 55, 79, 0.14);
+  border-radius: 8px;
+}
+
+.tournament-podium-team > span {
+  grid-row: 1 / span 2;
+  color: #986e0e;
+  font-family: "Segoe Print", "Bradley Hand", cursive;
+  font-size: 21px;
+  font-weight: 900;
+}
+
+.tournament-podium-team > strong {
+  min-width: 0;
+  color: var(--navy);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px;
+}
+
+.tournament-podium-team > small {
+  color: #777f7b;
+  font-size: 8px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.tournament-podium-team.rank-1 {
+  color: white;
+  background: var(--navy);
+  border-color: rgba(240, 195, 90, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(240, 195, 90, 0.15);
+}
+
+.tournament-podium-team.rank-1 > strong,
+.tournament-podium-team.rank-1 > small {
+  color: white;
+}
+
+.tournament-podium-team.rank-1 > span {
+  color: #f0c35a;
+}
+
 .capsule-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
@@ -4721,6 +4814,78 @@ td:nth-child(2) small {
 
 .journey-panel {
   grid-column: 1 / -1;
+}
+
+.community-panel {
+  grid-column: 1 / -1;
+}
+
+.community-final-story {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.3fr) repeat(3, minmax(150px, 1fr));
+  border-top: 1px solid rgba(31, 55, 79, 0.14);
+  border-bottom: 1px solid rgba(31, 55, 79, 0.14);
+}
+
+.community-final-story > div {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  padding: 15px;
+  border-right: 1px solid rgba(31, 55, 79, 0.12);
+}
+
+.community-final-story > div:last-child {
+  border-right: 0;
+}
+
+.community-final-story > div > span {
+  color: #7d6550;
+  font-size: 8px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.community-final-story > div > strong {
+  overflow: hidden;
+  color: var(--navy);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-final-story > div > small {
+  overflow: hidden;
+  color: #6f7772;
+  font-size: 9px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+}
+
+.community-final-vote > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--navy);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.community-final-vote > i {
+  height: 5px;
+  position: relative;
+  overflow: hidden;
+  background: rgba(134, 52, 55, 0.72);
+  border-radius: 3px;
+}
+
+.community-final-vote > i > b {
+  height: 100%;
+  display: block;
+  background: #d4a92f;
 }
 
 .final-showdown {
@@ -4956,6 +5121,14 @@ td:nth-child(2) small {
   font-size: 9px;
   font-weight: 900;
   text-decoration: none;
+}
+
+.final-showdown-buttons .final-highlights-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: white;
+  background: #bb343b;
 }
 
 .bronze-undercard {
@@ -5985,7 +6158,9 @@ td:nth-child(2) small {
   .highlight-grid,
   .capsule-grid,
   .archive-controls,
-  .report-lines {
+  .report-lines,
+  .tournament-podium,
+  .community-final-story {
     grid-template-columns: 1fr;
   }
 
@@ -6057,6 +6232,19 @@ td:nth-child(2) small {
 
   .champion-memory {
     min-height: 180px;
+  }
+
+  .tournament-podium {
+    margin-top: -6px;
+  }
+
+  .community-final-story > div {
+    border-right: 0;
+    border-bottom: 1px solid rgba(31, 55, 79, 0.12);
+  }
+
+  .community-final-story > div:last-child {
+    border-bottom: 0;
   }
 
   .capsule-panel h3 {

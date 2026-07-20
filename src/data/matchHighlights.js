@@ -51,6 +51,7 @@ const TAPMAD_VIDEO_IDS = {
   48: 'ajMw8BPZWMs',
   49: '3bf1HqRbO9o',
   50: 'RJo4AzB93IU',
+  51: 'z1IWGvvVL4U',
   52: 'WuhTBFKPk00',
   53: 'uSl2YZr0bcw',
   54: 'pqWmbZk7xIg',
@@ -102,14 +103,19 @@ const TAPMAD_VIDEO_IDS = {
   100: 'Yu0kXb_To7Y',
   101: 'Ho_u5uaCH40',
   102: '6YDVSJMuq78',
+  103: 'VoZG0cWoNh0',
+  104: 'Vb-48HGNIwg',
 }
 
-// Match 51 has no verified Tapmad upload yet. The final two matches are added
-// after they finish, so the archive never sends visitors to an unrelated video.
+const SHORT_HIGHLIGHT_MATCHES = new Set([51])
+
 export const MATCH_HIGHLIGHTS = Object.fromEntries(
   Object.entries(TAPMAD_VIDEO_IDS).map(([matchNumber, videoId]) => [
     matchNumber,
     {
+      format: SHORT_HIGHLIGHT_MATCHES.has(Number(matchNumber))
+        ? 'Short highlights'
+        : 'Full highlights',
       source: 'tapmad',
       youtubeUrl: `https://www.youtube.com/watch?v=${videoId}`,
     },
@@ -136,11 +142,11 @@ export function youtubeEmbedUrl(url) {
   return videoId ? `https://www.youtube-nocookie.com/embed/${videoId}` : ''
 }
 
-function matchTitle(match, matchNumber) {
+function matchTitle(match, matchNumber, format) {
   const homeName = TEAMS[match?.home_team_id]?.name
   const awayName = TEAMS[match?.away_team_id]?.name
-  if (homeName && awayName) return `${homeName} vs ${awayName} | Full highlights`
-  return `Match ${matchNumber} | Full highlights`
+  if (homeName && awayName) return `${homeName} vs ${awayName} | ${format}`
+  return `Match ${matchNumber} | ${format}`
 }
 
 export function getMatchHighlight(match) {
@@ -150,8 +156,11 @@ export function getMatchHighlight(match) {
   const videoId = youtubeVideoId(highlight.youtubeUrl)
 
   return {
+    format: highlight.format ?? 'Match highlights',
     source: highlight.source ?? 'Match highlights',
-    title: highlight.title ?? matchTitle(match, key),
+    title:
+      highlight.title
+      ?? matchTitle(match, key, highlight.format ?? 'Match highlights'),
     youtubeUrl: highlight.youtubeUrl,
     embedUrl: youtubeEmbedUrl(highlight.youtubeUrl),
     thumbnailUrl: videoId

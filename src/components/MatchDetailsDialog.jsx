@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { FINAL_STREAM } from '../data/finalExperience'
+import { getMatchHighlight } from '../data/matchHighlights'
 import { TEAMS } from '../data/tournament'
 import {
   fetchMatchDetails,
@@ -477,8 +478,10 @@ export function MatchDetailsDialog({
   const awayName = awayTeam?.name ?? details?.away.name ?? 'TBD'
   const homeScore = details?.home.score ?? match.home_score
   const awayScore = details?.away.score ?? match.away_score
+  const currentStatus = details?.status ?? match.status
+  const finalHighlight = finalExperience ? getMatchHighlight(match) : null
   const finalStreamAvailable = finalExperience
-    && (details?.status ?? match.status) !== 'finished'
+    && currentStatus !== 'finished'
   const source = match.source_payload ?? {}
   const stadium = details?.stadium ?? source.stadium
   const city = details?.city ?? source.city
@@ -556,6 +559,21 @@ export function MatchDetailsDialog({
               </span>
               <strong>Watch now</strong>
             </a>
+          ) : finalHighlight ? (
+            <a
+              aria-label="Watch Spain vs Argentina final highlights on tapmad"
+              className="final-stream-banner final-replay-banner"
+              href={finalHighlight.youtubeUrl}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <Icon name="play" size={15} />
+              <span>
+                <b>Watch final highlights</b>
+                <small>{finalHighlight.format} on tapmad YouTube</small>
+              </span>
+              <strong>Replay</strong>
+            </a>
           ) : null}
         </header>
 
@@ -606,7 +624,13 @@ export function MatchDetailsDialog({
                 <section className="final-feed-status" aria-label="FIFA feed status">
                   <div className={details ? 'ready' : ''}>
                     <span>Match feed</span>
-                    <strong>{details ? 'Connected' : 'Connecting'}</strong>
+                    <strong>
+                      {details
+                        ? currentStatus === 'finished'
+                          ? 'Archived'
+                          : 'Connected'
+                        : 'Connecting'}
+                    </strong>
                   </div>
                   <div className={details?.home.starters.length ? 'ready' : ''}>
                     <span>Starting XIs</span>
@@ -620,7 +644,13 @@ export function MatchDetailsDialog({
                   </div>
                   <div className={details?.events.length ? 'ready' : ''}>
                     <span>Action timeline</span>
-                    <strong>{details?.events.length ? 'Live' : 'Starts at kickoff'}</strong>
+                    <strong>
+                      {details?.events.length
+                        ? currentStatus === 'finished'
+                          ? 'Complete'
+                          : 'Live'
+                        : 'Starts at kickoff'}
+                    </strong>
                   </div>
                 </section>
               ) : null}
@@ -684,7 +714,11 @@ export function MatchDetailsDialog({
                 {finalExperience ? (
                   <header className="timeline-controls">
                     <div>
-                      <span>Live action feed</span>
+                      <span>
+                        {currentStatus === 'finished'
+                          ? 'Complete action feed'
+                          : 'Live action feed'}
+                      </span>
                       <strong>{details.events.length} events from FIFA</strong>
                     </div>
                     <div aria-label="Timeline filter">
@@ -799,7 +833,11 @@ export function MatchDetailsDialog({
         <footer className="match-details-footer">
           <span>
             Official FIFA data
-            {finalExperience ? ' - automatically refreshed every 45 seconds' : ' - refreshed when this match is opened'}
+            {finalExperience
+              ? currentStatus === 'finished'
+                ? ' - final verified archive'
+                : ' - automatically refreshed every 45 seconds'
+              : ' - refreshed when this match is opened'}
           </span>
           <a href={fifaMatchCentreUrl(match, details)} rel="noreferrer" target="_blank">
             Open FIFA match centre
