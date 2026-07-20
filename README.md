@@ -1,27 +1,45 @@
-# The 2026 Notebook
+# The 2026 Knockout Notebook
 
-A live FIFA World Cup 2026 results, prediction, and what-if notebook inspired
-by the handwritten group tables and knockout simulations I kept during Qatar
-2022.
+A complete, permanent FIFA World Cup 2026 results, predictions, highlights, and
+what-if archive inspired by the handwritten tournament notebook I kept during
+Qatar 2022.
 
 **Live product:** [muzzammilminhas.github.io/the-2026-notebook](https://muzzammilminhas.github.io/the-2026-notebook/)
 
-![The 2026 Notebook desktop interface](public/screenshots/notebook-desktop.png)
+![Spain crowned world champions in The 2026 Knockout Notebook](public/social-preview.png)
+
+## Final Tournament Record
+
+| Record | Final value |
+| --- | --- |
+| World champions | Spain |
+| Final | Spain 1-0 Argentina, after extra time |
+| Winning goal | Ferran Torres, 106th minute |
+| Third place | England, after a 6-4 win over France |
+| Matches archived | 104/104 |
+| Tournament goals | 308 |
+| Highlight links | 104/104 verified Tapmad uploads |
+| Notebook champion | Ubaid, 102 prediction points |
 
 ## Product Overview
 
-The app combines an automated official-results notebook with a personal
-tournament simulator:
+The finished product combines a verified tournament record with each user's
+personal prediction journey:
 
-- **Actual:** read-only chronological fixtures and FIFA-sourced results.
-- **What If:** score predictions for future group matches with live scenario
-  standings beside the fixture feed.
+- **Championship home:** Spain's title, the 1-0 final, bronze result, and the
+  complete tournament status at a glance.
+- **Actual archive:** all 104 chronological fixtures and FIFA-sourced results.
+- **What If:** preserved group and knockout predictions with personal scenario
+  standings and bracket paths.
 - **Standings:** all 12 official group tables and the best third-place ranking.
-- **Knockout:** separate official and personal Round of 32-to-final brackets.
-- **Leaderboard:** public rankings using automatically scored predictions.
-- **Match centre:** clickable fixture cards with live minute, venue, weather,
-  referee, attendance, events, lineups, and team statistics when FIFA publishes
-  them.
+- **Knockout:** completed official and personal Round of 32-to-final brackets.
+- **Leaderboard:** finalized public rankings and prediction report cards.
+- **Final Match Centre:** the 128-event action feed, 22 team-stat rows,
+  formations, lineups, officials, venue, and attendance for Match 104.
+- **Highlights:** a 104-match Tapmad YouTube archive, ordered from the final
+  back to the opening fixture.
+- **Time Capsule:** podium, Hall of Fame, tournament records, community final
+  picks, and each signed-in user's final report card.
 - **Community picks:** predictions remain private before kickoff and become
   visible after they are locked, including aggregate outcomes and popular
   scorelines.
@@ -56,11 +74,12 @@ device clock or bypassing the UI cannot submit a late prediction.
 When a match starts, its real score replaces the user's prediction throughout
 the scenario calculation as soon as official data is available.
 
-## Live Data Architecture
+## Tournament Data Architecture
 
-The app uses two FIFA-hosted data paths:
+The app used two FIFA-hosted data paths during the tournament and now adds a
+committed, versioned archive as its permanent fallback.
 
-### 1. Central Official Result Sync
+### 1. Official Result Sync
 
 ```text
 Supabase Cron (every minute)
@@ -81,18 +100,19 @@ Supabase Postgres matches table
 Scoring triggers + React clients
 ```
 
-The Edge Function downloads the complete 104-match competition feed every
-minute. It validates the fixture count and known FIFA fixture IDs before
-upserting kickoff times, teams, match status, scores, winners, verification
-state, and source metadata.
+During the tournament, the Edge Function downloaded the complete 104-match
+competition feed every minute. It validated the fixture count and known FIFA
+fixture IDs before upserting kickoff times, teams, match status, scores,
+winners, verification state, and source metadata.
 
 Official results are cached in Postgres so every visitor reads the same
 authoritative tournament state instead of independently polling the complete
 FIFA schedule.
 
-### 2. On-Demand Match Details
+### 2. Final Match Details
 
-The browser requests match-specific FIFA endpoints only when needed:
+The browser requests FIFA's Match 104 endpoints when the Final Match Centre is
+opened:
 
 - The live endpoint supplies match minute, teams, venue, weather, officials,
   attendance, events, and lineups.
@@ -100,12 +120,29 @@ The browser requests match-specific FIFA endpoints only when needed:
 - FIFA's match-statistics endpoint supplies possession, expected goals,
   attempts, passes, cards, and related statistics.
 
-Live matches refresh once per minute while their details are open. Finished
-match details are cached in the browser session.
+Finished match details are cached in the browser session.
 
-This is a **near-live polling system**, not a zero-latency WebSocket feed. Under
-normal conditions, official score changes appear within roughly one to two
-minutes.
+### 3. Permanent Static Archive
+
+```text
+Supabase final tables + FIFA Match 104 endpoints
+        |
+        v
+npm run archive:tournament
+        |
+        v
+public/tournament-archive.json
+        |
+        +--> Supabase result fallback
+        +--> FIFA Match Centre fallback
+        +--> PWA offline cache
+```
+
+The committed snapshot contains all 104 verified results, the finalized public
+leaderboard, public community picks for the final, and the normalized Final
+Match Centre payload. It deliberately excludes private account and prediction
+data. The normal live sources remain the first choice; the static archive is
+loaded only when one of those services is unavailable.
 
 ## Reliability and Data Integrity
 
@@ -118,6 +155,11 @@ minutes.
 - Prediction scoring runs inside Postgres after a verified result update.
 - The previous stored result remains available if FIFA is temporarily
   unreachable.
+- A versioned static snapshot preserves all 104 results and the final
+  leaderboard if Supabase becomes unavailable.
+- Match 104's 128 events, 22 stat rows, lineups, formations, and officials are
+  served from the snapshot if FIFA retires its endpoints.
+- The service worker precaches the snapshot for offline archive access.
 - The frontend displays unavailable states instead of fabricating missing
   match details.
 
@@ -217,7 +259,12 @@ supabase/
 public/
   icons/                       PWA and install icons
   manifest.webmanifest         Installable app metadata
-  sw.js                        Network-first service worker
+  social-preview.png           Open Graph and release artwork
+  tournament-archive.json      Permanent final data snapshot
+  sw.js                        Network-first service worker + archive cache
+
+scripts/
+  createTournamentArchive.mjs  Validated snapshot generator
 
 .github/workflows/deploy.yml   Test, build, and GitHub Pages deployment
 ```
@@ -258,7 +305,18 @@ npm run build
 ```
 
 The current automated suite covers fixture scheduling, tournament calculations,
-knockout behavior, FIFA match-detail normalization, and live clock handling.
+knockout behavior, FIFA match-detail normalization, live clock handling, and
+the integrity of the permanent 104-match archive.
+
+The final snapshot can be regenerated only while the public Supabase and FIFA
+sources are still available:
+
+```powershell
+npm run archive:tournament
+```
+
+The generator refuses to write an incomplete archive: it requires 104 finished,
+verified matches plus a substantial Final Match Centre payload.
 
 ## Deployment
 
@@ -272,6 +330,12 @@ Every push to `main` starts the GitHub Pages workflow:
 
 Supabase runs independently from GitHub Pages, so the centralized result sync
 continues even when no visitor has the website open.
+
+## Final Release
+
+`v1.0-world-cup-2026-final` is the frozen tournament edition. New work after
+this release should be limited to security, availability, or compatibility
+fixes so the archive remains an accurate record of the completed competition.
 
 ## Tournament Reference
 

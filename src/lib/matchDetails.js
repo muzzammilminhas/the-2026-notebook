@@ -1,3 +1,5 @@
+import { loadArchivedMatchDetails } from './tournamentArchive.js'
+
 const detailsCache = new Map()
 
 const KEY_STATS = [
@@ -296,23 +298,29 @@ export async function fetchMatchDetails(match, force = false) {
   }
 
   const request = (async () => {
-    const live = await fetchJson(
-      `https://api.fifa.com/api/v3/live/football/${fixtureId}?language=en`,
-    )
-    const ifesId = live.Properties?.IdIFES
-    const [rawStats, timeline] = await Promise.all([
-      ifesId
-        ? fetchJson(
-            `https://fdh-api.fifa.com/v1/stats/match/${ifesId}/teams.json`,
-            true,
-          )
-        : null,
-      fetchJson(
-        `https://api.fifa.com/api/v3/timelines/${fixtureId}?language=en`,
-        true,
-      ),
-    ])
-    return normalizeMatchDetails(live, rawStats, timeline)
+    try {
+      const live = await fetchJson(
+        `https://api.fifa.com/api/v3/live/football/${fixtureId}?language=en`,
+      )
+      const ifesId = live.Properties?.IdIFES
+      const [rawStats, timeline] = await Promise.all([
+        ifesId
+          ? fetchJson(
+              `https://fdh-api.fifa.com/v1/stats/match/${ifesId}/teams.json`,
+              true,
+            )
+          : null,
+        fetchJson(
+          `https://api.fifa.com/api/v3/timelines/${fixtureId}?language=en`,
+          true,
+        ),
+      ])
+      return normalizeMatchDetails(live, rawStats, timeline)
+    } catch (error) {
+      const archived = await loadArchivedMatchDetails(fixtureId)
+      if (archived) return archived
+      throw error
+    }
   })()
 
   detailsCache.set(fixtureId, { createdAt: Date.now(), request })

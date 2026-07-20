@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { GROUP_IDS, TEAMS } from '../data/tournament'
 import { fifaClockLabel } from '../lib/matchDetails'
+import { loadTournamentArchive } from '../lib/tournamentArchive'
 import { isScoreComplete } from '../lib/tournamentEngine'
 import { supabase } from '../lib/supabase'
 
@@ -14,6 +15,7 @@ const EMPTY_STATE = {
   isAdmin: false,
   loading: true,
   error: null,
+  archiveFallback: false,
   lastUpdated: null,
 }
 
@@ -196,14 +198,29 @@ export function useWorldCupBackend() {
         isAdmin: Boolean(isAdmin),
         loading: false,
         error: null,
+        archiveFallback: false,
         lastUpdated: new Date(),
       })
     } catch (error) {
-      setState((current) => ({
-        ...current,
-        loading: false,
-        error: error.message || 'Could not connect to the live backend.',
-      }))
+      try {
+        const archive = await loadTournamentArchive()
+        setState((current) => ({
+          ...current,
+          matches: archive.matches,
+          leaderboard: archive.leaderboard,
+          loading: false,
+          error: null,
+          archiveFallback: true,
+          lastUpdated: new Date(archive.generatedAt),
+        }))
+      } catch {
+        setState((current) => ({
+          ...current,
+          loading: false,
+          error: error.message || 'Could not connect to the live backend.',
+          archiveFallback: false,
+        }))
+      }
     }
   }, [])
 

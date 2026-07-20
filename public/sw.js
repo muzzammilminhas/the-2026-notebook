@@ -1,8 +1,9 @@
-const CACHE_NAME = 'the-2026-notebook-v4'
+const CACHE_NAME = 'the-2026-notebook-v5'
 const APP_ROOT = new URL('./', self.registration.scope).pathname
 const APP_SHELL = [
   APP_ROOT,
   `${APP_ROOT}manifest.webmanifest`,
+  `${APP_ROOT}tournament-archive.json`,
   `${APP_ROOT}icons/app-icon.svg`,
   `${APP_ROOT}icons/pwa-192.png`,
   `${APP_ROOT}icons/pwa-512.png`,

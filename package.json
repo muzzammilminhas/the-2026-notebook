@@ -1,9 +1,10 @@
 {
   "name": "world-cup-notebook",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "archive:tournament": "node scripts/createTournamentArchive.mjs",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",

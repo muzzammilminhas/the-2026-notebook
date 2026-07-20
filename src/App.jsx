@@ -467,7 +467,9 @@ function App() {
   const verifiedCount = Object.values(backend.matchMeta).filter(
     (match) => match.status === 'finished' && match.verified,
   ).length
-  const syncText = backend.error
+  const syncText = backend.archiveFallback
+    ? 'Permanent archive'
+    : backend.error
     ? 'Live feed unavailable'
     : backend.lastUpdated
       ? `Checked ${backend.lastUpdated.toLocaleTimeString([], {

@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
+  fetchMatchDetails,
   fifaClockLabel,
   fifaMatchCentreUrl,
   normalizeMatchDetails,
@@ -136,5 +137,43 @@ describe('match details', () => {
     ).toBe(
       'https://www.fifa.com/en/match-centre/match/17/285023/289292/400021543',
     )
+  })
+
+  it('falls back to the permanent archive when FIFA is unavailable', async () => {
+    const fixtureId = '999999999'
+    const archivedDetails = {
+      id: fixtureId,
+      status: 'finished',
+      events: [{ id: 'archived-goal', type: 'Goal' }],
+      stats: [{ key: 'Possession', home: '50%', away: '50%' }],
+    }
+    const fetchMock = vi.fn(async (url) => {
+      if (String(url).includes('tournament-archive.json')) {
+        return {
+          ok: true,
+          json: async () => ({
+            schemaVersion: 1,
+            matches: Array.from({ length: 104 }, (_, index) => ({
+              match_number: index + 1,
+            })),
+            matchDetails: { [fixtureId]: archivedDetails },
+          }),
+        }
+      }
+      return { ok: false, status: 503 }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    try {
+      await expect(
+        fetchMatchDetails(
+          { source_fixture_id: fixtureId, status: 'finished' },
+          true,
+        ),
+      ).resolves.toEqual(archivedDetails)
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

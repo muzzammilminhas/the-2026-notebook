@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getMatchHighlight } from '../data/matchHighlights'
 import { TEAMS } from '../data/tournament'
 import { supabase } from '../lib/supabase'
+import { loadTournamentArchive } from '../lib/tournamentArchive'
 import { TeamName } from './TeamName'
 
 function ordinal(value) {
@@ -181,12 +182,21 @@ export function TimeCapsule({
     let cancelled = false
 
     async function loadFinalPicks() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('community_knockout_predictions')
         .select('*')
         .eq('match_number', 104)
         .order('submitted_at', { ascending: true })
-      if (!cancelled) setFinalPicks(data ?? [])
+      if (!error && data?.length) {
+        if (!cancelled) setFinalPicks(data)
+        return
+      }
+      try {
+        const archive = await loadTournamentArchive()
+        if (!cancelled) setFinalPicks(archive.finalCommunityPicks ?? [])
+      } catch {
+        if (!cancelled) setFinalPicks([])
+      }
     }
 
     loadFinalPicks()
